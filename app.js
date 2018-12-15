@@ -49,17 +49,15 @@ app.post('/mysql_create_db_user', (req, res) => {
         })
       }
 
-      // {
-      //   userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
-      //   dbName: 'org94780',
-      //   dbOrgName: 'employee1',
-      //   dbOrgPassword: '123456'
-      // },
+      const userGUID = uuid();
+      const dbOrgName = dbName;
+      const dbOrgPassword = '123456';
 
       const createDbQuery = `CREATE DATABASE ${dbName}`;
       const createTableQuery = `CREATE TABLE ${dbName}.customers (name VARCHAR(255), address VARCHAR(255))`;
-      const createDbUserQuery = `CREATE USER '${orgName}'@'localhost' IDENTIFIED BY '123456';`;
-      const addPermissionQuery = `GRANT ALL PRIVILEGES ON '${dbName}.*' TO '${orgName}'@'localhost';`;
+      const createDbUserQuery = `CREATE USER '${dbName}'@'localhost' IDENTIFIED BY '${dbOrgPassword}';`;
+      const addPermissionQuery = `GRANT ALL PRIVILEGES ON ${dbName}.* TO '${dbName}'@'localhost';`;
+      
       con.query(createDbQuery, (err, result) => {
         if (err) {
           return res.json({
@@ -78,14 +76,31 @@ app.post('/mysql_create_db_user', (req, res) => {
 
           con.query(createDbUserQuery, (err, result) => {
             if (err) {
-              console.log('err: ', err);
               return res.json({
                 confirmation: 'fail',
                 message: 'fail to create db user'
               })
             }
 
-            console.log('created db user');
+            con.query(addPermissionQuery, (err, result) => {
+              if (err) {
+                return res.json({
+                  confirmation: 'fail',
+                  message: 'fail to add permission to db user'
+                })
+              }
+              
+              return res.json({
+                confirmation: 'success',
+                message: 'user and db has been created',
+                response: {
+                  userGUID,
+                  dbName,
+                  dbOrgName,
+                  dbOrgPassword,
+                }
+              })
+            })
           })
         })
       })
@@ -157,15 +172,14 @@ app.post('/mongo_create_db_user', (req, res) => {
             //   dbName,
             // }
           }, (err, result) => {
+            db.close();
             if (err) {
-              db.close();
               return res.json({
                 confirmation: 'fail',
                 message: 'fail to create db user'
               })
             }
 
-            db.close();
             return res.json({
               confirmation: 'success',
               message: 'user and db has been created',
@@ -302,13 +316,13 @@ app.post('/mongo_test_list', (req, res) => {
 
     const dbo = db.db(dbUser.dbName);
     dbo.collection("test").find().toArray((err, result) => {
+      db.close();
       if (err) {
         return res.json({
           confirmation: 'fail',
           message: 'fail to fetch'
         })
       }
-      db.close();
 
       return res.json({
         confirmation: 'success',
