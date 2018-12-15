@@ -1,4 +1,3 @@
-const Sequelize = require("sequelize");
 const express = require('express');
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -10,95 +9,24 @@ const MongoClient = require('mongodb').MongoClient;
 
 // Basic setup
 const port = (process.env.PORT || 8888);
-const mysql_host = (process.env.MYSQL_SERVICE_HOST || 'localhost');
-const mysql_port = (process.env.MYSQL_SERVICE_PORT || 3306);
-
-
-// Mysql setup
-const password = "";
-const sequelize = new Sequelize("digitalxi", "root", password, {
-  dialect: "mysql",
-  dialectOptions: {
-    multipleStatements: true
-  },
-  logging: false,
-  define: {
-    timestamps: false
-  },
-  host: mysql_host,
-  port: mysql_port,
-});
-
 
 // Routes
 const app = express();
 app.use(bodyParser.json());
 
-app.get('/mysql_list', async (req, res) => {
 
-  var con = mysql.createConnection({
-    host: `${mysql_host}`,
-    user: "employee1",
-    password: "123456",
-    database: "employee1"
-  });
+app.post('/mysql_create_db_user', (req, res) => {
 
-  con.connect(function (err) {
-    if (err) {
-      return res.json({
-        confirmation: 'fail',
-        err,
-      })
-    };
-    con.query("SELECT * FROM ApiKeys", function (err, result, fields) {
-      if (err) {
-        return res.json({
-          confirmation: 'fail',
-          err,
-        })
-      };
-      return res.json({
-        confirmation: 'success',
-        result
-      })
-    });
-  });
-});
+  const {
+    orgName,
+  } = req.body;
 
-app.get('/mysql_create', async (req, res) => {
-
-  var con = mysql.createConnection({
-    host: `${mysql_host}`,
-    user: "employee1",
-    password: "123456",
-    database: "employee1"
-  });
-
-  con.connect(function (err) {
-    if (err) {
-      return res.json({
-        confirmation: 'fail',
-        err,
-      })
-    };
-    var sql = `INSERT INTO ApiKeys (KeyGUID, Level, IsActive, Note, IsActivePasscode, Version, CreatedAt, UpdatedAt) VALUES ('123', 1, 1, 'newly insert', 1, '1.0.1', "2000-01-01 12:00:00", "2000-01-01 12:00:00")`;
-    con.query(sql, function (err, result) {
-      if (err) {
-        return res.json({
-          confirmation: 'fail',
-          err,
-        })
-      };
-      return res.json({
-        confirmation: 'success',
-        result
-      })
-    });
-  });
-});
-
-
-app.get('/test', (req, res) => {
+  if (!orgName) {
+    return res.json({
+      confirmation: 'fail',
+      message: 'orgName is required'
+    })
+  }
 
   var con = mysql.createConnection({
     host: `${mysql_host}`,
@@ -124,8 +52,9 @@ app.get('/test', (req, res) => {
       mysql_port,
       config: sequelize.config
     })
-  });
-});
+  })
+})
+
 
 
 app.post('/mongo_create_db_user', (req, res) => {
@@ -189,10 +118,10 @@ app.post('/mongo_create_db_user', (req, res) => {
             userGUID: dbName
           }
         })
-      });
+      })
     })
   })
-});
+})
 
 
 app.post('/mongo_test_create', (req, res) => {
@@ -256,7 +185,7 @@ app.post('/mongo_test_create', (req, res) => {
         confirmation: 'success',
         message: 'inserted to the corresponding db',
       })
-    });    
+    })
   })
 })
 
@@ -322,7 +251,7 @@ app.post('/mongo_test_list', (req, res) => {
         totalRecords: result.length,
         response: result
       })
-    });
+    })
   })
 })
 
