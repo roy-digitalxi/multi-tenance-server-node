@@ -49,7 +49,17 @@ app.post('/mysql_create_db_user', (req, res) => {
         })
       }
 
+      // {
+      //   userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
+      //   dbName: 'org94780',
+      //   dbOrgName: 'employee1',
+      //   dbOrgPassword: '123456'
+      // },
+
       const createDbQuery = `CREATE DATABASE ${dbName}`;
+      const createTableQuery = `CREATE TABLE ${dbName}.customers (name VARCHAR(255), address VARCHAR(255))`;
+      const createDbUserQuery = `CREATE USER '${orgName}'@'localhost' IDENTIFIED BY '123456';`;
+      const addPermissionQuery = `GRANT ALL PRIVILEGES ON '${dbName}.*' TO '${orgName}'@'localhost';`;
       con.query(createDbQuery, (err, result) => {
         if (err) {
           return res.json({
@@ -58,8 +68,26 @@ app.post('/mysql_create_db_user', (req, res) => {
           })
         }
 
-        console.log('created: ', dbName);
+        con.query(createTableQuery, (err, result) => {
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              message: 'fail to create table'
+            })
+          }
 
+          con.query(createDbUserQuery, (err, result) => {
+            if (err) {
+              console.log('err: ', err);
+              return res.json({
+                confirmation: 'fail',
+                message: 'fail to create db user'
+              })
+            }
+
+            console.log('created db user');
+          })
+        })
       })
     })
   })
@@ -112,7 +140,7 @@ app.post('/mongo_create_db_user', (req, res) => {
           }
 
           const userGUID = uuid();
-          const dbOrgName = orgName;
+          const dbOrgName = dbName;
           const dbOrgPassword = '123456';
           const dbo = db.db(dbName);
           dbo.addUser(dbOrgName, dbOrgPassword, {
@@ -124,10 +152,10 @@ app.post('/mongo_create_db_user', (req, res) => {
               { role: "dbOwner", db: dbName },
               { role: "enableSharding", db: dbName }
             ],
-            customData: {
-              userGUID,
-              dbName,
-            }
+            // customData: {
+            //   userGUID,
+            //   dbName,
+            // }
           }, (err, result) => {
             if (err) {
               db.close();
@@ -144,8 +172,10 @@ app.post('/mongo_create_db_user', (req, res) => {
               response: {
                 userGUID,
                 dbName,
+                dbOrgName,
+                dbOrgPassword,
               }
-            })            
+            })
           })
         })
       })
@@ -173,16 +203,16 @@ app.post('/mongo_test_create', (req, res) => {
   // 3. api continue
   const userArr = [
     {
-      userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
-      dbName: 'org94780',
-      dbOrgName: 'employee1',
-      dbOrgPassword: '123456'
+      "userGUID": "6543b572-28c4-409d-a326-8d8eea2a816e",
+      "dbName": "org44526",
+      "dbOrgName": "org44526",
+      "dbOrgPassword": "123456"
     },
     {
-      userGUID: 'ece977c3-5e43-4cf0-9c57-1936c6021848',
-      dbName: 'org94243',
-      dbOrgName: 'employee2',
-      dbOrgPassword: '123456'
+      "userGUID": "84017f7e-57cd-4c7e-bd4a-0ce40cb3ce0a",
+      "dbName": "org62836",
+      "dbOrgName": "org62836",
+      "dbOrgPassword": "123456"
     }
   ];
   const userFilter = userArr.filter(user => user.userGUID == userGUID);
@@ -212,7 +242,7 @@ app.post('/mongo_test_create', (req, res) => {
           message: 'fail to insert data to collection'
         })
       }
-      
+
       return res.json({
         confirmation: 'success',
         message: 'inserted to the corresponding db',
@@ -241,16 +271,16 @@ app.post('/mongo_test_list', (req, res) => {
   // 3. api continue
   const userArr = [
     {
-      userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
-      dbName: 'org94780',
-      dbOrgName: 'employee1',
-      dbOrgPassword: '123456'
+      "userGUID": "6543b572-28c4-409d-a326-8d8eea2a816e",
+      "dbName": "org44526",
+      "dbOrgName": "org44526",
+      "dbOrgPassword": "123456"
     },
     {
-      userGUID: 'ece977c3-5e43-4cf0-9c57-1936c6021848',
-      dbName: 'org94243',
-      dbOrgName: 'employee2',
-      dbOrgPassword: '123456'
+      "userGUID": "84017f7e-57cd-4c7e-bd4a-0ce40cb3ce0a",
+      "dbName": "org62836",
+      "dbOrgName": "org62836",
+      "dbOrgPassword": "123456"
     }
   ];
   const userFilter = userArr.filter(user => user.userGUID == userGUID);
