@@ -5,6 +5,7 @@ const path = require("path");
 const moment = require("moment-timezone");
 const mysql = require('mysql');
 const MongoClient = require('mongodb').MongoClient;
+const mongoose = require('mongoose');
 
 // Basic setup
 const port = (process.env.PORT || 8888);
@@ -38,15 +39,15 @@ app.post('/mysql_create_db_user', (req, res) => {
         confirmation: 'fail',
         message: 'fail to connect db'
       })
-    };
+    }
 
     generateUniqueMysqlDbName(con, (err, dbName) => {
       if (err) {
         return res.json({
           confirmation: 'fail',
-          message: 'fail to generate new db number'
+          message: 'fail to generate unique db number'
         })
-      };
+      }
 
       const createDbQuery = `CREATE DATABASE ${dbName}`;
       con.query(createDbQuery, (err, result) => {
@@ -55,7 +56,7 @@ app.post('/mysql_create_db_user', (req, res) => {
             confirmation: 'fail',
             message: 'fail to create db'
           })
-        };
+        }
 
         console.log('created: ', dbName);
 
@@ -77,69 +78,78 @@ app.post('/mongo_create_db_user', (req, res) => {
     })
   }
 
-  MongoClient.connect('mongodb://root:root@localhost:27017/', { useNewUrlParser: true }, (err, db) => {
+  // 1. admin check db exists
+  const adminPath = 'mongodb://root:root@localhost:27017/';
+  const connection = mongoose.createConnection(adminPath);
+  const Admin = mongoose.mongo.Admin;
+  connection.on('open', () => {
+    new Admin(connection.db).listDatabases((err, result) => {
+      connection.close();
+      if (err) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'fail to connect db'
+        })
+      }
 
-    if (err) {
-      return res.json({
-        confirmation: 'fail',
-        message: 'fail to connect db'
+      // 2. generate unique db name
+      const allDatabases = result.databases;
+      generateUniqueMongoDbNumber(allDatabases, (err, dbName) => {
+        if (err) {
+          return res.json({
+            confirmation: 'fail',
+            message: 'fail to generate unique db number'
+          })
+        }
+
+        // 3. create db user with permission
+        MongoClient.connect(adminPath, { useNewUrlParser: true }, (err, db) => {
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              message: 'fail to connect db'
+            })
+          }
+
+          const userGUID = uuid();
+          const dbOrgName = orgName;
+          const dbOrgPassword = '123456';
+          const dbo = db.db(dbName);
+          dbo.addUser(dbOrgName, dbOrgPassword, {
+            roles: [
+              { role: "readWrite", db: dbName },
+              { role: "read", db: dbName },
+              { role: "userAdmin", db: dbName },
+              { role: "dbAdmin", db: dbName },
+              { role: "dbOwner", db: dbName },
+              { role: "enableSharding", db: dbName }
+            ],
+            customData: {
+              userGUID,
+              dbName,
+            }
+          }, (err, result) => {
+            if (err) {
+              db.close();
+              return res.json({
+                confirmation: 'fail',
+                message: 'fail to create db user'
+              })
+            }
+
+            db.close();
+            return res.json({
+              confirmation: 'success',
+              message: 'user and db has been created',
+              response: {
+                userGUID,
+                dbName,
+              }
+            })            
+          })
+        })
       })
-    }
-
-    // const dbo = db.db()
-    // dbo.collection("customers").find(query).toArray(function(err, result) {
-    //   if (err) throw err;
-    //   console.log(result);
-     
-    // });
-
-    // const dbName = uuid();
-    // const dbOrgName = orgName;
-    // const dbOrgPassword = '123456';
-
-    // console.log('dbName: ', dbName);
-
-
-    // const dbo = db.db(dbName);
-    // dbo.addUser(dbOrgName, dbOrgPassword, {
-    //   roles: [
-    //     { role: "readWrite", db: dbName },
-    //     { role: "read", db: dbName },
-    //     { role: "userAdmin", db: dbName },
-    //     { role: "dbAdmin", db: dbName },
-    //     { role: "dbOwner", db: dbName },
-    //     { role: "enableSharding", db: dbName }
-    //   ],
-    //   customData: {
-    //     'userGUID': dbName,
-    //   }
-    // }, (err, result) => {
-    //   if (err) {
-    //     return res.json({
-    //       confirmation: 'fail',
-    //       message: 'fail to create db user'
-    //     })
-    //   }
-
-    //   const myobj = { name: "Company Inc", address: "Highway 37" };
-    //   dbo.collection("test").insertOne(myobj, (err, result) => {
-    //     if (err) {
-    //       return res.json({
-    //         confirmation: 'fail',
-    //         message: 'fail to insert data to collection'
-    //       })
-    //     }
-
-    //     db.close();
-    //     return res.json({
-    //       confirmation: 'success',
-    //       message: 'user and db has been created',
-    //       response: {
-    //         userGUID: dbName
-    //       }
-    //     })
-    //   })
-    // })
+    })
   })
 })
 
@@ -163,14 +173,14 @@ app.post('/mongo_test_create', (req, res) => {
   // 3. api continue
   const userArr = [
     {
-      userGUID: 'c4a378cb-ce1b-42e0-8212-18eae411ed4f',
-      dbName: 'c4a378cb-ce1b-42e0-8212-18eae411ed4f',
+      userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
+      dbName: 'org94780',
       dbOrgName: 'employee1',
       dbOrgPassword: '123456'
     },
     {
-      userGUID: 'c9d8c5ea-5e88-4b14-8541-7ba1f08d3a4d',
-      dbName: 'c9d8c5ea-5e88-4b14-8541-7ba1f08d3a4d',
+      userGUID: 'ece977c3-5e43-4cf0-9c57-1936c6021848',
+      dbName: 'org94243',
       dbOrgName: 'employee2',
       dbOrgPassword: '123456'
     }
@@ -192,17 +202,17 @@ app.post('/mongo_test_create', (req, res) => {
       })
     }
 
-    const dbo = db.db(dbUser.userGUID);
+    const dbo = db.db(dbUser.dbName);
     const myobj = { name: "Company Inc", address: "Highway 37" };
     dbo.collection("test").insertOne(myobj, (err, result) => {
+      db.close();
       if (err) {
         return res.json({
           confirmation: 'fail',
           message: 'fail to insert data to collection'
         })
       }
-
-      db.close();
+      
       return res.json({
         confirmation: 'success',
         message: 'inserted to the corresponding db',
@@ -231,12 +241,14 @@ app.post('/mongo_test_list', (req, res) => {
   // 3. api continue
   const userArr = [
     {
-      userGUID: 'c4a378cb-ce1b-42e0-8212-18eae411ed4f',
+      userGUID: '086b41c7-e486-42ce-942c-b2834c503cf0',
+      dbName: 'org94780',
       dbOrgName: 'employee1',
       dbOrgPassword: '123456'
     },
     {
-      userGUID: 'c9d8c5ea-5e88-4b14-8541-7ba1f08d3a4d',
+      userGUID: 'ece977c3-5e43-4cf0-9c57-1936c6021848',
+      dbName: 'org94243',
       dbOrgName: 'employee2',
       dbOrgPassword: '123456'
     }
@@ -250,7 +262,7 @@ app.post('/mongo_test_list', (req, res) => {
   }
 
   const dbUser = userFilter[0];
-  MongoClient.connect(`mongodb://${dbUser.dbOrgName}:${dbUser.dbOrgPassword}@localhost:27017/${dbUser.userGUID}`, { useNewUrlParser: true }, (err, db) => {
+  MongoClient.connect(`mongodb://${dbUser.dbOrgName}:${dbUser.dbOrgPassword}@localhost:27017/${dbUser.dbName}`, { useNewUrlParser: true }, (err, db) => {
     if (err) {
       return res.json({
         confirmation: 'fail',
@@ -258,7 +270,7 @@ app.post('/mongo_test_list', (req, res) => {
       })
     }
 
-    const dbo = db.db(dbUser.userGUID);
+    const dbo = db.db(dbUser.dbName);
     dbo.collection("test").find().toArray((err, result) => {
       if (err) {
         return res.json({
@@ -300,8 +312,16 @@ const generateUniqueMysqlDbName = (con, callback) => {
   });
 }
 
-const generateUniqueMongoDbNumber = (db, callback) => {
-  
+const generateUniqueMongoDbNumber = (arr, callback) => {
+  let dbNumber = randomDbNumber();
+  let dbName = `org${dbNumber}`;
+  const filterArr = arr.filter(db => db.name == dbName);
+  if (filterArr.length) {
+    generateUniqueMysqlDbName(arr, callback);
+    return;
+  }
+  callback(null, dbName);
+  return;
 }
 
 const randomDbNumber = () => {
