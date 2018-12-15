@@ -43,6 +43,7 @@ app.post('/mysql_create_db_user', (req, res) => {
 
     generateUniqueMysqlDbName(con, (err, dbName) => {
       if (err) {
+        con.end();
         return res.json({
           confirmation: 'fail',
           message: 'fail to generate unique db number'
@@ -60,6 +61,7 @@ app.post('/mysql_create_db_user', (req, res) => {
       
       con.query(createDbQuery, (err, result) => {
         if (err) {
+          con.end();
           return res.json({
             confirmation: 'fail',
             message: 'fail to create db'
@@ -68,6 +70,7 @@ app.post('/mysql_create_db_user', (req, res) => {
 
         con.query(createTableQuery, (err, result) => {
           if (err) {
+            con.end();
             return res.json({
               confirmation: 'fail',
               message: 'fail to create table'
@@ -76,6 +79,7 @@ app.post('/mysql_create_db_user', (req, res) => {
 
           con.query(createDbUserQuery, (err, result) => {
             if (err) {
+              con.end();
               return res.json({
                 confirmation: 'fail',
                 message: 'fail to create db user'
@@ -83,6 +87,7 @@ app.post('/mysql_create_db_user', (req, res) => {
             }
 
             con.query(addPermissionQuery, (err, result) => {
+              con.end();
               if (err) {
                 return res.json({
                   confirmation: 'fail',
@@ -108,6 +113,149 @@ app.post('/mysql_create_db_user', (req, res) => {
   })
 })
 
+
+app.post('/mysql_test_create', (req, res) => {
+
+  const {
+    userGUID,
+  } = req.body;
+
+  if (!userGUID) {
+    return res.json({
+      confirmation: 'fail',
+      message: 'userGUID is required'
+    })
+  }
+
+  // middleware
+  // 1. keycloak authenticated
+  // 2. keycloak get db info: employee1:123456
+  // 3. api continue
+  const userArr = [
+    {
+      "userGUID": "60bcc353-46ed-4da3-bf8a-ceb936c59da6",
+      "dbName": "org25639",
+      "dbOrgName": "org25639",
+      "dbOrgPassword": "123456"
+    },
+    {
+      "userGUID": "566715e4-338b-4914-9c5b-dca8e9dfdf43",
+      "dbName": "org55296",
+      "dbOrgName": "org55296",
+      "dbOrgPassword": "123456"
+    }
+  ];
+  const userFilter = userArr.filter(user => user.userGUID == userGUID);
+  if (!userFilter.length) {
+    return res.json({
+      confirmation: 'fail',
+      message: 'keycloak authenticated failed'
+    })
+  }
+
+  const dbUser = userFilter[0];
+
+  var con = mysql.createConnection({
+    host: `localhost`,
+    user: dbUser.dbOrgName,
+    password: dbUser.dbOrgPassword,
+    database: dbUser.dbName
+  });
+
+  con.connect((err) => {
+    if (err) {
+      return res.json({
+        confirmation: 'fail to connect db',
+        err,
+      })
+    }
+
+    var sql = `INSERT INTO customers (name, address) VALUES ('test', '199 street')`;
+    con.query(sql, (err, result) => {
+      if (err) {
+        con.end();
+        return res.json({
+          confirmation: 'fail',
+          err,
+        })
+      }
+      return res.json({
+        confirmation: 'success',
+        message: 'insert it to db'
+      })
+    })
+  })
+})
+
+
+app.post('/mysql_test_list', (req, res) => {
+
+  const {
+    userGUID,
+  } = req.body;
+
+  if (!userGUID) {
+    return res.json({
+      confirmation: 'fail',
+      message: 'userGUID is required'
+    })
+  }
+
+  // middleware
+  // 1. keycloak authenticated
+  // 2. keycloak get db info: employee1:123456
+  // 3. api continue
+  const userArr = [
+    {
+      "userGUID": "60bcc353-46ed-4da3-bf8a-ceb936c59da6",
+      "dbName": "org25639",
+      "dbOrgName": "org25639",
+      "dbOrgPassword": "123456"
+    },
+    {
+      "userGUID": "566715e4-338b-4914-9c5b-dca8e9dfdf43",
+      "dbName": "org55296",
+      "dbOrgName": "org55296",
+      "dbOrgPassword": "123456"
+    }
+  ];
+  const userFilter = userArr.filter(user => user.userGUID == userGUID);
+  if (!userFilter.length) {
+    return res.json({
+      confirmation: 'fail',
+      message: 'keycloak authenticated failed'
+    })
+  }
+
+  const dbUser = userFilter[0];
+  var con = mysql.createConnection({
+    host: `localhost`,
+    user: dbUser.dbOrgName,
+    password: dbUser.dbOrgPassword,
+    database: dbUser.dbName
+  });
+
+  con.connect(function (err) {
+    if (err) {
+      return res.json({
+        confirmation: 'fail',
+        err,
+      })
+    };
+    con.query("SELECT * FROM customers", function (err, result, fields) {
+      if (err) {
+        return res.json({
+          confirmation: 'fail',
+          err,
+        })
+      };
+      return res.json({
+        confirmation: 'success',
+        result
+      })
+    })
+  })
+})
 
 app.post('/mongo_create_db_user', (req, res) => {
   const {
