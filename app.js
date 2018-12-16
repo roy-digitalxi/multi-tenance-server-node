@@ -59,18 +59,7 @@ app.post('/test', (req, res) => {
         message: 'keycloak admin api'
       })
 
-      // 1. list realms
-      // client.realms.find("nodejs-example")
-      //   .then((realms) => {
-      //     return res.json({
-      //       realms
-      //     })
-      //   })
-      //   .catch((err) => {
-      //     console.log('Error', err);
-      //   })
-
-      // 2. create role
+      // 1. create role
       // client.realms.roles.create('nodejs-example', {name: 'new role from api'})
       //   .then((newRole) => {
       //     console.log('newRole: ', newRole);
@@ -79,7 +68,7 @@ app.post('/test', (req, res) => {
       //     console.log('Error', err);
       //   })
 
-      // 3. list roles
+      // 2. list roles
       // client.realms.roles.find('nodejs-example', '')
       //   .then((roles) => {
       //     return res.json({
@@ -90,7 +79,7 @@ app.post('/test', (req, res) => {
       //     console.log('Error', err);
       //   })
 
-      // 4. create user
+      // 3. create user
       // client.users.create('nodejs-example', { username: 'new user from api' })
       //   .then((newUser) => {
       //     return res.json({
@@ -101,7 +90,7 @@ app.post('/test', (req, res) => {
       //     console.log('Error', err);
       //   })
 
-      // 5. list users
+      // 4. list users
       // client.users.find('nodejs-example', '')
       //   .then((users) => {
       //     return res.json({
@@ -112,7 +101,7 @@ app.post('/test', (req, res) => {
       //     console.log('Error', err);
       //   })
 
-      // 6. add role to user
+      // 5. add role to user
       // user id: 21763e38-3d29-43f1-879e-1b9660a37c48
       // role id: e070c22c-22bb-4c9a-9485-b7c9755a2f5d
       // role name: new role from api
@@ -130,7 +119,7 @@ app.post('/test', (req, res) => {
       //     console.log('Error', err);
       //   })
 
-      // 7. remove role from user
+      // 6. remove role from user
       // client.realms.maps.unmap('nodejs-example', '21763e38-3d29-43f1-879e-1b9660a37c48',
       //   [
       //     {
