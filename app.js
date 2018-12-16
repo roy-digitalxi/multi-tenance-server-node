@@ -3,18 +3,174 @@ const bodyParser = require("body-parser");
 const uuid = require("uuid-v4");
 const path = require("path");
 const moment = require("moment-timezone");
+
+
+// Keycloak
+const Keycloak = require('keycloak-connect');
+const adminClient = require('keycloak-admin-client');
+const session = require('express-session');
+
+
+// DB
 const mysql = require('mysql');
 const MongoClient = require('mongodb').MongoClient;
 const mongoose = require('mongoose');
 
+
 // Basic setup
 const port = (process.env.PORT || 8888);
+
 
 // Routes
 const app = express();
 app.use(bodyParser.json());
 
 
+// Keycloak session
+const memoryStore = new session.MemoryStore();
+app.use(session({
+  secret: 'mySecret',
+  resave: false,
+  saveUninitialized: true,
+  store: memoryStore
+}));
+const keycloak = new Keycloak({
+  store: memoryStore
+});
+app.use(keycloak.middleware({
+  logout: '/logoff123',
+  admin: '/',
+}));
+
+
+// keycloak admin api
+app.post('/test', (req, res) => {
+  const settings = {
+    baseUrl: 'http://127.0.0.1:8080/auth',
+    username: 'admin',
+    password: 'admin',
+    grant_type: 'password',
+    client_id: 'admin-cli'
+  };
+  adminClient(settings)
+    .then((client) => {
+
+      return res.json({
+        message: 'keycloak admin api'
+      })
+
+      // 1. list realms
+      // client.realms.find("nodejs-example")
+      //   .then((realms) => {
+      //     return res.json({
+      //       realms
+      //     })
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 2. create role
+      // client.realms.roles.create('nodejs-example', {name: 'new role from api'})
+      //   .then((newRole) => {
+      //     console.log('newRole: ', newRole);
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 3. list roles
+      // client.realms.roles.find('nodejs-example', '')
+      //   .then((roles) => {
+      //     return res.json({
+      //       roles
+      //     })
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 4. create user
+      // client.users.create('nodejs-example', { username: 'new user from api' })
+      //   .then((newUser) => {
+      //     return res.json({
+      //       newUser
+      //     })
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 5. list users
+      // client.users.find('nodejs-example', '')
+      //   .then((users) => {
+      //     return res.json({
+      //       users
+      //     })
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 6. add role to user
+      // user id: 21763e38-3d29-43f1-879e-1b9660a37c48
+      // role id: e070c22c-22bb-4c9a-9485-b7c9755a2f5d
+      // role name: new role from api
+      // client.realms.maps.map('nodejs-example', '21763e38-3d29-43f1-879e-1b9660a37c48',
+      //   [
+      //     {
+      //       id: 'e070c22c-22bb-4c9a-9485-b7c9755a2f5d',
+      //       name: 'new role from api',
+      //     },
+      //   ])
+      //   .then(() => {
+      //     console.log('added');
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+
+      // 7. remove role from user
+      // client.realms.maps.unmap('nodejs-example', '21763e38-3d29-43f1-879e-1b9660a37c48',
+      //   [
+      //     {
+      //       id: 'e070c22c-22bb-4c9a-9485-b7c9755a2f5d',
+      //       name: 'new role from api',
+      //     },
+      //   ])
+      //   .then(() => {
+      //     console.log('removed');
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
+    })
+    .catch((err) => {
+      console.log('Error', err);
+    })
+})
+
+
+// keycloak test api
+app.get('/login', keycloak.protect(), (req, res) => {
+  return res.json({
+    result: JSON.stringify(JSON.parse(req.session['keycloak-token']), null, 4),
+  })
+})
+
+
+app.post('/protect/test', keycloak.enforcer(['res1:view'],
+  {
+    resource_server_id: 'nodejs-apiserver'
+  }
+), (req, res) => {
+  return res.json({
+    message: 'pass here'
+  })
+})
+
+
+// Routes
 app.post('/mysql_create_db_user', (req, res) => {
   const {
     orgName,
@@ -58,7 +214,7 @@ app.post('/mysql_create_db_user', (req, res) => {
       const createTableQuery = `CREATE TABLE ${dbName}.customers (name VARCHAR(255), address VARCHAR(255))`;
       const createDbUserQuery = `CREATE USER '${dbName}'@'localhost' IDENTIFIED BY '${dbOrgPassword}';`;
       const addPermissionQuery = `GRANT ALL PRIVILEGES ON ${dbName}.* TO '${dbName}'@'localhost';`;
-      
+
       con.query(createDbQuery, (err, result) => {
         if (err) {
           con.end();
@@ -94,7 +250,7 @@ app.post('/mysql_create_db_user', (req, res) => {
                   message: 'fail to add permission to db user'
                 })
               }
-              
+
               return res.json({
                 confirmation: 'success',
                 message: 'user and db has been created',
@@ -256,6 +412,7 @@ app.post('/mysql_test_list', (req, res) => {
     })
   })
 })
+
 
 app.post('/mongo_create_db_user', (req, res) => {
   const {
@@ -480,8 +637,6 @@ app.post('/mongo_test_list', (req, res) => {
     })
   })
 })
-
-
 
 
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
