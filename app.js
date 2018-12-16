@@ -80,7 +80,7 @@ app.post('/test', (req, res) => {
       //   })
 
       // 3. create user
-      // client.users.create('nodejs-example', { username: 'new user from api' })
+      // client.users.create('nodejs-example', { username: 'new user from api 2', attributes: {dbName: '123', dbPassword: '123456'} })
       //   .then((newUser) => {
       //     return res.json({
       //       newUser
@@ -209,8 +209,8 @@ app.post('/admin/create_org', (req, res) => {
             })
           }
 
-          mysqlDbList = mysqlDbList.map(item => item = ({ ...item }))
-          mongoDbList = mongoDbList.databases
+          mysqlDbList = mysqlDbList.map(item => item = ({ ...item }));
+          mongoDbList = mongoDbList.databases;
           generateUniqueDbName(mysqlDbList, mongoDbList, (err, dbName) => {
             if (err) {
               con.end();
@@ -221,7 +221,7 @@ app.post('/admin/create_org', (req, res) => {
             }
 
             console.log('dbName: ', dbName);
-
+ 
           })
         })
       })
@@ -231,6 +231,7 @@ app.post('/admin/create_org', (req, res) => {
 
 
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
+
 
 const generateUniqueDbName = (arr1, arr2, callback) => {
   let dbNumber = randomDbNumber();
