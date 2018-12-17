@@ -55,9 +55,12 @@ app.post('/test', (req, res) => {
   adminClient(settings)
     .then((client) => {
 
-      return res.json({
-        message: 'keycloak admin api'
-      })
+      // console.log('client.users.resetPassword: ', client.users.resetPassword);
+      // return;
+
+      // return res.json({
+      //   message: 'keycloak admin api'
+      // })
 
       // 1. create role
       // client.realms.roles.create('nodejs-example', {name: 'new role from api'})
@@ -80,11 +83,28 @@ app.post('/test', (req, res) => {
       //   })
 
       // 3. create user
-      // client.users.create('nodejs-example', { username: 'new user from api 2', attributes: {dbName: '123', dbPassword: '123456'} })
+      // let user = {
+      //   username: 'test12',
+      //   email: 'www.test12.com',
+      //   emailVerified: true,
+      //   enabled: true,
+      //   attributes: { dbName: '123', dbPassword: '123456' }
+      // };
+      // client.users.create('nodejs-example', user)
       //   .then((newUser) => {
-      //     return res.json({
-      //       newUser
-      //     })
+      //     const updateUser = {
+      //       type: 'password',
+      //       value: '123456'
+      //     };
+      //     client.users.resetPassword('nodejs-example', newUser.id, updateUser)
+      //       .then(() => {
+      //         return res.json({
+      //           newUser
+      //         })
+      //       })
+      //       .catch((err) => {
+      //         console.log('Error', err);
+      //       })
       //   })
       //   .catch((err) => {
       //     console.log('Error', err);
@@ -221,7 +241,7 @@ app.post('/admin/create_org', (req, res) => {
             }
 
             console.log('dbName: ', dbName);
- 
+
           })
         })
       })
