@@ -55,16 +55,15 @@ app.post('/test', (req, res) => {
   adminClient(settings)
     .then((client) => {
 
-      client.users.find('nodejs-example', { username: 'test1' })
-        .then((users) => {
+      // client.users.find('nodejs-example', { username: 'test1' })
+      //   .then((users) => {
 
-          console.log('users: ', users);
+      //     console.log('users: ', users);
 
-        })
-        .catch((err) => {
-          console.log('Error', err);
-        })
-
+      //   })
+      //   .catch((err) => {
+      //     console.log('Error', err);
+      //   })
 
       // return res.json({
       //   message: 'keycloak admin api'
@@ -361,10 +360,10 @@ app.post('/admin/create_org', (req, res) => {
                                   email: `www.${dbName}.com`,
                                   emailVerified: true,
                                   enabled: true,
-                                  attributes: { 
+                                  attributes: {
                                     userGUID,
-                                    dbName, 
-                                    dbPassword: '123456' 
+                                    dbName,
+                                    dbPassword: '123456'
                                   }
                                 };
                                 client.users.create('nodejs-example', user)
@@ -375,9 +374,26 @@ app.post('/admin/create_org', (req, res) => {
                                     };
                                     client.users.resetPassword('nodejs-example', newUser.id, updateUser)
                                       .then(() => {
-                                        return res.json({
-                                          newUser
-                                        })
+
+                                        // 7. add role to keycloak user
+                                        client.realms.maps.map('nodejs-example', newUser.id,
+                                          [
+                                            {
+                                              id: '69b31d44-39ba-4d4e-a94f-e22e08e83dc6',
+                                              name: 'user'
+                                            },
+                                          ])
+                                          .then(() => {
+                                            return res.json({
+                                              newUser
+                                            })
+                                          })
+                                          .catch((err) => {
+                                            return res.json({
+                                              confirmation: 'fail',
+                                              message: 'fail to add role to user'
+                                            })
+                                          })
                                       })
                                       .catch((err) => {
                                         return res.json({
