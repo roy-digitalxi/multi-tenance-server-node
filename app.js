@@ -242,7 +242,7 @@ app.post('/admin/create_org', (req, res) => {
             })
           }
 
-          // keycloak connect admin
+          // 3. keycloak check
           const settings = {
             baseUrl: 'http://127.0.0.1:8080/auth',
             username: 'admin',
@@ -262,7 +262,6 @@ app.post('/admin/create_org', (req, res) => {
                     if (err) {
 
                       mysqlCon.end();
-                      mongoCon.close();
 
                       return res.json({
                         confirmation: 'fail',
@@ -270,8 +269,136 @@ app.post('/admin/create_org', (req, res) => {
                       })
                     }
 
+                    mongoCon.close();
+                    const userGUID = uuid();
+                    const dbOrgName = dbName;
+                    const dbOrgPassword = '123456';
 
-                    console.log('dbName: ', dbName);
+                    const createDbQuery = `CREATE DATABASE ${dbName}`;
+                    const createTableQuery = `CREATE TABLE ${dbName}.customers (name VARCHAR(255), address VARCHAR(255))`;
+                    const createDbUserQuery = `CREATE USER '${dbName}'@'localhost' IDENTIFIED BY '${dbOrgPassword}';`;
+                    const addPermissionQuery = `GRANT ALL PRIVILEGES ON ${dbName}.* TO '${dbName}'@'localhost';`;
+
+                    // 4. mysql setup
+                    mysqlCon.query(createDbQuery, (err, result) => {
+                      if (err) {
+
+                        mysqlCon.end();
+                        mongoCon.close();
+
+                        return res.json({
+                          confirmation: 'fail',
+                          message: 'fail to create db'
+                        })
+                      }
+
+                      mysqlCon.query(createTableQuery, (err, result) => {
+                        if (err) {
+
+                          mysqlCon.end();
+                          mongoCon.close();
+
+                          return res.json({
+                            confirmation: 'fail',
+                            message: 'fail to create table'
+                          })
+                        }
+
+                        mysqlCon.query(createDbUserQuery, (err, result) => {
+                          if (err) {
+
+                            mysqlCon.end();
+                            mongoCon.close();
+
+                            return res.json({
+                              confirmation: 'fail',
+                              message: 'fail to create db user'
+                            })
+                          }
+
+                          mysqlCon.query(addPermissionQuery, (err, result) => {
+
+                            mysqlCon.end();
+
+                            if (err) {
+                              return res.json({
+                                confirmation: 'fail',
+                                message: 'fail to add permission to db user'
+                              })
+                            }
+
+                            // 5. mongoDB setup
+                            MongoClient.connect(adminPath, { useNewUrlParser: true }, (err, db) => {
+                              if (err) {
+                                return res.json({
+                                  confirmation: 'fail',
+                                  message: 'fail to connect db'
+                                })
+                              }
+
+                              const dbo = db.db(dbName);
+                              dbo.addUser(dbOrgName, dbOrgPassword, {
+                                roles: [
+                                  { role: "readWrite", db: dbName },
+                                  { role: "read", db: dbName },
+                                  { role: "userAdmin", db: dbName },
+                                  { role: "dbAdmin", db: dbName },
+                                  { role: "dbOwner", db: dbName },
+                                  { role: "enableSharding", db: dbName }
+                                ],
+                              }, (err, result) => {
+                                db.close();
+                                if (err) {
+                                  return res.json({
+                                    confirmation: 'fail',
+                                    message: 'fail to create db user'
+                                  })
+                                }
+
+                                // 6. keycloak setup
+                                let user = {
+                                  username: dbName,
+                                  email: `www.${dbName}.com`,
+                                  emailVerified: true,
+                                  enabled: true,
+                                  attributes: { 
+                                    userGUID,
+                                    dbName, 
+                                    dbPassword: '123456' 
+                                  }
+                                };
+                                client.users.create('nodejs-example', user)
+                                  .then((newUser) => {
+                                    const updateUser = {
+                                      type: 'password',
+                                      value: '123456'
+                                    };
+                                    client.users.resetPassword('nodejs-example', newUser.id, updateUser)
+                                      .then(() => {
+                                        return res.json({
+                                          newUser
+                                        })
+                                      })
+                                      .catch((err) => {
+                                        return res.json({
+                                          confirmation: 'fail',
+                                          message: 'fail to update keycloak user'
+                                        })
+                                      })
+                                  })
+                                  .catch((err) => {
+                                    return res.json({
+                                      confirmation: 'fail',
+                                      message: 'fail to create keycloak user'
+                                    })
+                                  })
+
+                              })
+                            })
+                          })
+                        })
+                      })
+                    })
 
 
                   })
@@ -288,7 +415,7 @@ app.post('/admin/create_org', (req, res) => {
                 })
             })
             .catch((err) => {
-              
+
               mysqlCon.end();
               mongoCon.close();
 
@@ -297,7 +424,6 @@ app.post('/admin/create_org', (req, res) => {
                 message: 'fail to connect keycloak'
               })
             })
-          
         })
       })
     })
