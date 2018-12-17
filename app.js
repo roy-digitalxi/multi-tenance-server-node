@@ -201,12 +201,12 @@ app.post('/admin/create_org', (req, res) => {
     })
   }
 
+  // 1. mysql check
   const mysqlCon = mysql.createConnection({
     host: `localhost`,
     user: "root",
     password: '',
   });
-
   mysqlCon.connect((err) => {
     if (err) {
       return res.json({
@@ -224,15 +224,15 @@ app.post('/admin/create_org', (req, res) => {
           message: 'fail to connect db'
         })
       }
-      
+
+      // 2. mongodb check
       const adminPath = 'mongodb://root:root@localhost:27017/';
       const mongoCon = mongoose.createConnection(adminPath);
       const Admin = mongoose.mongo.Admin;
       mongoCon.on('open', () => {
         new Admin(mongoCon.db).listDatabases((err, mongoDbList) => {
-          
-          if (err) {
 
+          if (err) {
             mysqlCon.end();
             mongoCon.close();
 
@@ -242,78 +242,62 @@ app.post('/admin/create_org', (req, res) => {
             })
           }
 
-          mysqlDbList = mysqlDbList.map(item => item = ({ ...item }));
-          mongoDbList = mongoDbList.databases;
-          generateUniqueDbName(mysqlDbList, mongoDbList, (err, dbName) => {
-            if (err) {
+          // keycloak connect admin
+          const settings = {
+            baseUrl: 'http://127.0.0.1:8080/auth',
+            username: 'admin',
+            password: 'admin',
+            grant_type: 'password',
+            client_id: 'admin-cli'
+          };
+          adminClient(settings)
+            .then((client) => {
 
+              client.users.find('nodejs-example')
+                .then((keyCloakUsers) => {
+
+                  mysqlDbList = mysqlDbList.map(item => item = ({ ...item }));
+                  mongoDbList = mongoDbList.databases;
+                  generateUniqueDbName(mysqlDbList, mongoDbList, keyCloakUsers, (err, dbName) => {
+                    if (err) {
+
+                      mysqlCon.end();
+                      mongoCon.close();
+
+                      return res.json({
+                        confirmation: 'fail',
+                        message: 'fail to generate unique db name'
+                      })
+                    }
+
+
+                    console.log('dbName: ', dbName);
+
+
+                  })
+                })
+                .catch((err) => {
+
+                  mysqlCon.end();
+                  mongoCon.close();
+
+                  return res.json({
+                    confirmation: 'fail',
+                    message: 'fail to get keycloak users'
+                  })
+                })
+            })
+            .catch((err) => {
+              
               mysqlCon.end();
               mongoCon.close();
 
               return res.json({
                 confirmation: 'fail',
-                message: 'fail to generate unique db name'
+                message: 'fail to connect keycloak'
               })
-            }
-
-            console.log('go keycloak now: ', dbName);
-
-            // // keycloak connect admin
-            // const settings = {
-            //   baseUrl: 'http://127.0.0.1:8080/auth',
-            //   username: 'admin',
-            //   password: 'admin',
-            //   grant_type: 'password',
-            //   client_id: 'admin-cli'
-            // };
-            // adminClient(settings)
-            //   .then((client) => {
-                
-            //     // keycloak search existing users
-            //     client.users.find('nodejs-example', { username: dbName })
-            //       .then((users) => {
-
-            //         if(users.length){
-            //           console.log('user name already taken');
-            //           return;
-            //         }
-
-            //         // keycloak create user
-            //         let user = {
-            //           username: dbName,
-            //           email: `www.${dbName}.com`,
-            //           emailVerified: true,
-            //           enabled: true,
-            //           attributes: { dbName: dbName, dbPassword: '123456' }
-            //         };
-            //         client.users.create('nodejs-example', user)
-            //           .then((newUser) => {
-            //             const updateUser = {
-            //               type: 'password',
-            //               value: '123456'
-            //             };
-            //             client.users.resetPassword('nodejs-example', newUser.id, updateUser)
-            //               .then(() => {
-            //                 return res.json({
-            //                   newUser
-            //                 })
-            //               })
-            //               .catch((err) => {
-            //                 console.log('Error', err);
-            //               })
-            //           })
-            //           .catch((err) => {
-            //             console.log('Error', err);
-            //           })
-            //       })
-            //       .catch((err) => {
-            //         console.log('Error', err);
-            //       })
-            //   })
-            //   .catch((err) => {
-            //     console.log('Error', err);
-            //   })
-          })
+            })
+          
         })
       })
     })
@@ -324,14 +308,15 @@ app.post('/admin/create_org', (req, res) => {
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
 
 
-const generateUniqueDbName = (arr1, arr2, callback) => {
+const generateUniqueDbName = (arr1, arr2, arr3, callback) => {
   let dbNumber = randomDbNumber();
   let dbName = `org${dbNumber}`;
 
   const filterArr1 = arr1.filter(db => db.Database == dbName);
   const filterArr2 = arr2.filter(db => db.name == dbName);
-  if (filterArr1.length || filterArr2.length) {
-    generateUniqueMysqlDbName(arr1, arr2, callback);
+  const filterArr3 = arr3.filter(db => db.username == dbName);
+  if (filterArr1.length || filterArr2.length || filterArr3.length) {
+    generateUniqueDbName(arr1, arr2, arr3, callback);
     return;
   }
   callback(null, dbName);
@@ -346,3 +331,45 @@ const randomDbNumber = () => {
   }
   return text;
 }
+
+
+ //     // keycloak search existing users
+                  //     client.users.find('nodejs-example', { username: dbName })
+                  //       .then((users) => {
+
+                  //         if(users.length){
+                  //           console.log('user name already taken');
+                  //           return;
+                  //         }
+
+                  //         // keycloak create user
+                  //         let user = {
+                  //           username: dbName,
+                  //           email: `www.${dbName}.com`,
+                  //           emailVerified: true,
+                  //           enabled: true,
+                  //           attributes: { dbName: dbName, dbPassword: '123456' }
+                  //         };
+                  //         client.users.create('nodejs-example', user)
+                  //           .then((newUser) => {
+                  //             const updateUser = {
+                  //               type: 'password',
+                  //               value: '123456'
+                  //             };
+                  //             client.users.resetPassword('nodejs-example', newUser.id, updateUser)
+                  //               .then(() => {
+                  //                 return res.json({
+                  //                   newUser
+                  //                 })
+                  //               })
+                  //               .catch((err) => {
+                  //                 console.log('Error', err);
+                  //               })
+                  //           })
+                  //           .catch((err) => {
+                  //             console.log('Error', err);
+                  //           })
+                  //       })
+                  //       .catch((err) => {
+                  //         console.log('Error', err);
+                  //       })
