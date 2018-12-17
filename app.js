@@ -38,7 +38,7 @@ const keycloak = new Keycloak({
   store: memoryStore
 });
 app.use(keycloak.middleware({
-  logout: '/logoff123',
+  logout: '/logout',
   admin: '/',
 }));
 
@@ -55,8 +55,16 @@ app.post('/test', (req, res) => {
   adminClient(settings)
     .then((client) => {
 
-      // console.log('client.users.resetPassword: ', client.users.resetPassword);
-      // return;
+      client.users.find('nodejs-example', { username: 'test1' })
+        .then((users) => {
+
+          console.log('users: ', users);
+
+        })
+        .catch((err) => {
+          console.log('Error', err);
+        })
+
 
       // return res.json({
       //   message: 'keycloak admin api'
@@ -193,13 +201,13 @@ app.post('/admin/create_org', (req, res) => {
     })
   }
 
-  const con = mysql.createConnection({
+  const mysqlCon = mysql.createConnection({
     host: `localhost`,
     user: "root",
     password: '',
   });
 
-  con.connect((err) => {
+  mysqlCon.connect((err) => {
     if (err) {
       return res.json({
         confirmation: 'fail',
@@ -208,21 +216,26 @@ app.post('/admin/create_org', (req, res) => {
     }
 
     const showAllDbSql = 'SHOW DATABASES;';
-    con.query(showAllDbSql, (err, mysqlDbList) => {
+    mysqlCon.query(showAllDbSql, (err, mysqlDbList) => {
       if (err) {
+        mysqlCon.end();
         return res.json({
           confirmation: 'fail',
           message: 'fail to connect db'
         })
       }
-
+      
       const adminPath = 'mongodb://root:root@localhost:27017/';
-      const connection = mongoose.createConnection(adminPath);
+      const mongoCon = mongoose.createConnection(adminPath);
       const Admin = mongoose.mongo.Admin;
-      connection.on('open', () => {
-        new Admin(connection.db).listDatabases((err, mongoDbList) => {
-          connection.close();
+      mongoCon.on('open', () => {
+        new Admin(mongoCon.db).listDatabases((err, mongoDbList) => {
+          
           if (err) {
+
+            mysqlCon.end();
+            mongoCon.close();
+
             return res.json({
               confirmation: 'fail',
               message: 'fail to connect db'
@@ -233,15 +246,73 @@ app.post('/admin/create_org', (req, res) => {
           mongoDbList = mongoDbList.databases;
           generateUniqueDbName(mysqlDbList, mongoDbList, (err, dbName) => {
             if (err) {
-              con.end();
+
+              mysqlCon.end();
+              mongoCon.close();
+
               return res.json({
                 confirmation: 'fail',
                 message: 'fail to generate unique db name'
               })
             }
 
-            console.log('dbName: ', dbName);
+            console.log('go keycloak now: ', dbName);
 
+            // // keycloak connect admin
+            // const settings = {
+            //   baseUrl: 'http://127.0.0.1:8080/auth',
+            //   username: 'admin',
+            //   password: 'admin',
+            //   grant_type: 'password',
+            //   client_id: 'admin-cli'
+            // };
+            // adminClient(settings)
+            //   .then((client) => {
+                
+            //     // keycloak search existing users
+            //     client.users.find('nodejs-example', { username: dbName })
+            //       .then((users) => {
+
+            //         if(users.length){
+            //           console.log('user name already taken');
+            //           return;
+            //         }
+
+            //         // keycloak create user
+            //         let user = {
+            //           username: dbName,
+            //           email: `www.${dbName}.com`,
+            //           emailVerified: true,
+            //           enabled: true,
+            //           attributes: { dbName: dbName, dbPassword: '123456' }
+            //         };
+            //         client.users.create('nodejs-example', user)
+            //           .then((newUser) => {
+            //             const updateUser = {
+            //               type: 'password',
+            //               value: '123456'
+            //             };
+            //             client.users.resetPassword('nodejs-example', newUser.id, updateUser)
+            //               .then(() => {
+            //                 return res.json({
+            //                   newUser
+            //                 })
+            //               })
+            //               .catch((err) => {
+            //                 console.log('Error', err);
+            //               })
+            //           })
+            //           .catch((err) => {
+            //             console.log('Error', err);
+            //           })
+            //       })
+            //       .catch((err) => {
+            //         console.log('Error', err);
+            //       })
+            //   })
+            //   .catch((err) => {
+            //     console.log('Error', err);
+            //   })
           })
         })
       })
