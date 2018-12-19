@@ -362,7 +362,7 @@ app.post('/protect/mysql_create', keycloak.enforcer(['res1:create'],
         password: dbPassword,
         database: dbName
       });
-    
+
       con.connect((err) => {
         if (err) {
 
@@ -373,7 +373,7 @@ app.post('/protect/mysql_create', keycloak.enforcer(['res1:create'],
             err,
           })
         }
-    
+
         var sql = `INSERT INTO customers (name, address) VALUES ('test', '199 street')`;
         con.query(sql, (err, result) => {
 
@@ -445,7 +445,7 @@ app.post('/protect/mysql_list', keycloak.enforcer(['res1:view'],
         password: dbPassword,
         database: dbName
       });
-    
+
       con.connect((err) => {
         if (err) {
 
@@ -456,7 +456,7 @@ app.post('/protect/mysql_list', keycloak.enforcer(['res1:view'],
             err,
           })
         }
-    
+
         con.query("SELECT * FROM customers", function (err, result) {
 
           con.end();
@@ -483,7 +483,89 @@ app.post('/protect/mysql_list', keycloak.enforcer(['res1:view'],
     })
 })
 
+
 // v2
+app.post('/admin/create_org_v2', (req, res) => {
+
+  const settings = {
+    baseUrl: 'http://127.0.0.1:8080/auth',
+    username: 'admin',
+    password: 'admin',
+    grant_type: 'password',
+    client_id: 'admin-cli'
+  };
+  adminClient(settings)
+    .then((client) => {
+
+      // 1. create realm
+      // const newRealm = {
+      //   realm: 'new_realm_from_api',
+      //   enabled: true,
+      //   registrationAllowed: true
+      // };
+      // client.realms.create(newRealm)
+      //   .then((createdRealm) => {
+      //     console.log('created: ', createdRealm);
+      //   })
+      //   .catch((err) => {
+      //     console.log('err: ', err);
+      //   })
+
+      // 2. create client
+      // const newClient = {
+      //   clientId: 'new client from api',
+      //   redirectUris: [
+      //     'http://localhost:8888/*'
+      //   ],
+      //   webOrigins: [
+      //     'http://localhost:8888/*'
+      //   ],
+      //   directAccessGrantsEnabled: true,
+      //   serviceAccountsEnabled: true,
+      //   authorizationServicesEnabled: true,
+      //   fullScopeAllowed: false,
+      //   defaultClientScopes: [
+      //     "client_user_scope",
+      //   ]
+      // };
+      // client.clients.create('new_realm_from_api', newClient)
+      //   .then((createdClient) => {
+
+      //     console.log('created: ', createdClient);
+      //   })
+      //   .catch((err) => {
+      //     console.log('err: ', err);
+      //   })
+
+      // 3. create client role
+      // client.clients.find('nodejs-example', { clientId: 'nodejs-apiserver' })
+      //   .then((resClient) => {
+
+      //     console.log(JSON.stringify(resClient));
+      //   })
+      //   .catch((err) => {
+      //     console.log('err: ', err);
+      //   })
+
+      // const newRole = {
+      //   name: 'testRole'
+      // };
+      // client.realms.roles.create('new_realm_from_api', newRole)
+      //   .then((createdRole) => {
+
+      //     console.log('createdRole: ', createdRole);
+      //   })
+      //   .catch((err) => {
+      //     console.log('err: ', err);
+      //   })
+
+    })
+    .catch((err) => {
+      console.log('err: ', err);
+    })
+})
+
+
 app.post('/admin/create_org', (req, res) => {
 
   const {
