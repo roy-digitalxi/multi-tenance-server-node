@@ -1,1 +1,8 @@
-{"realm":"abc","auth-server-url":"http://localhost:8080/auth","ssl-required":"external","resource":"cba","public-client":true,"confidential-port":0,"policy-enforcer":{}}
+{
+  "auth-server-url": "http://localhost:8080/auth",
+  "ssl-required": "external",
+  "resource": "nodejs-connect",
+  "public-client": true,
+  "confidential-port": 0,
+  "policy-enforcer": {}
+}

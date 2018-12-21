@@ -1,0 +1,91 @@
+{
+  "_from": "keycloak-connect-multirealm@^1.1.0",
+  "_id": "keycloak-connect-multirealm@1.1.0",
+  "_inBundle": false,
+  "_integrity": "sha512-9Ax4QRPjHRSVptScAyQojcMityoNdjeq95jF4YSQc3UX+54yGXjPWNRE3QqsQg5fLHNnpvaZET5hx3oFen+Pmg==",
+  "_location": "/keycloak-connect-multirealm",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "keycloak-connect-multirealm@^1.1.0",
+    "name": "keycloak-connect-multirealm",
+    "escapedName": "keycloak-connect-multirealm",
+    "rawSpec": "^1.1.0",
+    "saveSpec": null,
+    "fetchSpec": "^1.1.0"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/keycloak-connect-multirealm/-/keycloak-connect-multirealm-1.1.0.tgz",
+  "_shasum": "9c369359f909c62dd7766644cf3d40fbce19c8cc",
+  "_spec": "keycloak-connect-multirealm@^1.1.0",
+  "_where": "/Users/jiaronghe/Desktop/DigitalXi/test/server-node",
+  "author": {
+    "name": "Cesar Salazar @ Devsu"
+  },
+  "bugs": {
+    "url": "https://github.com/devsu/keycloak-nodejs-multirealm/issues"
+  },
+  "bundleDependencies": false,
+  "collectCoverageFrom": [
+    "src/**/*.{js}",
+    "!<rootDir>/node_modules/"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 95,
+      "functions": 95,
+      "lines": 95,
+      "statements": 95
+    }
+  },
+  "dependencies": {
+    "composable-middleware": "^0.3.0",
+    "jsonwebtoken": "^8.1.1",
+    "node-cache": "^4.1.1"
+  },
+  "deprecated": false,
+  "description": "Keycloak Node.js Adapter With Support for multiple realms",
+  "devDependencies": {
+    "eslint": "^4.16.0",
+    "eslint-config-devsu": "^0.0.3",
+    "jest": "^22.1.4",
+    "keycloak-connect": "^3.4.3",
+    "nsp": "^3.1.0"
+  },
+  "homepage": "https://github.com/devsu/keycloak-nodejs-multirealm#readme",
+  "keywords": [
+    "keycloak",
+    "multi",
+    "realm",
+    "node",
+    "nodejs",
+    "connect",
+    "express",
+    "auth",
+    "authentication",
+    "authorization"
+  ],
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "name": "keycloak-connect-multirealm",
+  "peerDependencies": {
+    "keycloak-connect": "3.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devsu/keycloak-nodejs-multirealm.git"
+  },
+  "scripts": {
+    "coverage": "jest --coverage && npm run posttest",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix .",
+    "posttest": "yarn run lint && nsp check",
+    "prepush": "yarn run coverage",
+    "test": "jest"
+  },
+  "version": "1.1.0"
+}

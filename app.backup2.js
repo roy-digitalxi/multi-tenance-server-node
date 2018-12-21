@@ -36,7 +36,7 @@ app.use(session({
 }));
 const keycloak = new Keycloak({
   store: memoryStore
-});
+}, null, 'abc');
 app.use(keycloak.middleware({
   logout: '/logout',
   admin: '/',
@@ -172,6 +172,20 @@ app.get('/login', keycloak.protect(), (req, res) => {
   return res.json({
     result: JSON.stringify(JSON.parse(req.session['keycloak-token']), null, 4),
   })
+})
+
+app.post('/test1', keycloak.enforcer(['res1:create'],
+  {
+    resource_server_id: 'nodejs-apiserver'
+  }
+), (req, res) => {
+
+  console.log(memoryStore);
+
+  // const token = req.kauth.grant.access_token.token;
+  // return res.json({
+  //   token
+  // })
 })
 
 
