@@ -5,6 +5,7 @@ const path = require("path");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const qs = require('qs');
+const fs = require('fs');
 
 // Keycloak
 const Keycloak = require('keycloak-connect');
@@ -52,7 +53,7 @@ app.get('/login', keycloak.protect(), (req, res) => {
 })
 
 
-// v2
+// v3
 app.post('/admin/create_org', (req, res) => {
 
   const {
@@ -501,24 +502,44 @@ app.post('/admin/create_org', (req, res) => {
                                                                                                 client.clients.find(createdRealm.realm, { clientId: 'realm-management' })
                                                                                                   .then(realmManagementClient => {
 
-                                                                                                    if(!realmManagementClient.length){
-                                                                                                      console.log('fail, cannot find the realm management client');
-                                                                                                      return;
+                                                                                                    if (!realmManagementClient.length) {
+                                                                                                      return res.json({
+                                                                                                        confirmation: 'fail',
+                                                                                                        message: 'fail to find the realm management client'
+                                                                                                      })
                                                                                                     }
                                                                                                     const realmManagementClientId = realmManagementClient[0].id;
                                                                                                     client.clients.roles.find(createdRealm.realm, realmManagementClientId)
                                                                                                       .then((clientRoles) => {
-                                                                                                        
+
                                                                                                         url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/users/${newUser.id}/role-mappings/clients/${realmManagementClientId}`;
                                                                                                         axios.post(url, clientRoles, {
-                                                                                                          headers: { 
+                                                                                                          headers: {
                                                                                                             'Authorization': "Bearer " + access_token
                                                                                                           }
                                                                                                         })
                                                                                                           .then(() => {
-                                                                                                            return res.json({
-                                                                                                              newUser
-                                                                                                            })
+                                                                                                            // 12. rewrite keycloak setup
+                                                                                                            const keyCloakJson = {
+                                                                                                              "realm": createdRealm.name,
+                                                                                                              "auth-server-url": "http://localhost:8080/auth",
+                                                                                                              "ssl-required": "external",
+                                                                                                              "resource": createdClient.clientId,
+                                                                                                              "public-client": true,
+                                                                                                              "confidential-port": 0,
+                                                                                                              "policy-enforcer": {}
+                                                                                                            }
+                                                                                                            fs.writeFile(path.join(__dirname, './keycloak.json'), JSON.stringify(keyCloakJson), 'utf8', (err => {
+                                                                                                              if (err) {
+                                                                                                                return res.json({
+                                                                                                                  confirmation: 'fail',
+                                                                                                                  message: 'fail to rewrite keycloak json'
+                                                                                                                })
+                                                                                                              }
+                                                                                                              return res.json({
+                                                                                                                newUser
+                                                                                                              })
+                                                                                                            }));                                                                                                            
                                                                                                           })
                                                                                                           .catch(err => {
                                                                                                             return res.json({
