@@ -549,27 +549,9 @@ app.post('/admin/create_org', (req, res) => {
                                                                                                           }
                                                                                                         })
                                                                                                           .then(() => {
-                                                                                                            // 12. rewrite keycloak setup
-                                                                                                            const keyCloakJson = {
-                                                                                                              "realm": createdRealm.name,
-                                                                                                              "auth-server-url": "http://localhost:8080/auth",
-                                                                                                              "ssl-required": "external",
-                                                                                                              "resource": createdClient.clientId,
-                                                                                                              "public-client": true,
-                                                                                                              "confidential-port": 0,
-                                                                                                              "policy-enforcer": {}
-                                                                                                            }
-                                                                                                            fs.writeFile(path.join(__dirname, './keycloak.json'), JSON.stringify(keyCloakJson), 'utf8', (err => {
-                                                                                                              if (err) {
-                                                                                                                return res.json({
-                                                                                                                  confirmation: 'fail',
-                                                                                                                  message: 'fail to rewrite keycloak json'
-                                                                                                                })
-                                                                                                              }
-                                                                                                              return res.json({
-                                                                                                                newUser
-                                                                                                              })
-                                                                                                            }));                                                                                                            
+                                                                                                            return res.json({
+                                                                                                              newUser
+                                                                                                            })                                                                                            
                                                                                                           })
                                                                                                           .catch(err => {
                                                                                                             return res.json({
