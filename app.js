@@ -13,21 +13,14 @@ const port = (process.env.PORT || 8888);
 
 const memoryStore = new session.MemoryStore();
 const config = { store: memoryStore };
-// const keycloakConfig = {
-//   "auth-server-url": "http://localhost:8080/auth",
-//   // 'bearer-only': true,
-//   "ssl-required": "external",
-//   "resource": "nodejs-connect",
-//   "policy-enforcer": {},
-//   "confidential-port": 0,
-//   "public-client": true,
-// };
-
 const keycloakConfig = {
-  'auth-server-url': 'http://localhost:8080/auth',
-  // 'bearer-only': true,
-  'ssl-required': 'external',
-  'resource': 'nodejs-connect',
+  "auth-server-url": "http://localhost:8080/auth",
+  'bearer-only': false,
+  "ssl-required": "external",
+  "resource": "nodejs-connect",
+  "policy-enforcer": {},
+  "confidential-port": 0,
+  "public-client": true,
 };
 
 const keycloak = new KeycloakMultirealm(config, keycloakConfig);
@@ -56,15 +49,11 @@ app.post('/test', keycloak.enforcer(['res1:view'],
   }
 ), (req, res) => {
 
+  const token = req.kauth.grant.access_token.token;
   return res.json({
-    message: 'pass'
+    token,
+    confirmation: 'success'
   })
-
-  // const token = req.kauth.grant.access_token.token;
-  // return res.json({
-  //   token,
-  //   confirmation: 'success'
-  // })
 })
 
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
