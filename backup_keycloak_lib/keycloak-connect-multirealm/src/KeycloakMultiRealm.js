@@ -73,6 +73,21 @@ module.exports = class {
     };
   }
 
+  getAccount(realm, token) {
+    return new Promise((resolve, reject) => {
+      const keycloakObject = this.getKeycloakObjectForRealm(realm);
+      keycloakObject.getAccount(token)
+        .then((user) => {
+          resolve(user);
+          return;
+        })
+        .catch(err => {
+          reject(err);
+          return;
+        })
+    })
+  }
+
   getRealmName(req) {
     const token = this._decodeTokenString(this._getTokenStringFromRequest(req));
     if (token && token.payload && token.payload.iss &&
