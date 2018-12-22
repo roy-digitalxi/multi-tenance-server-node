@@ -329,7 +329,7 @@ app.post('/admin/create_org', (req, res) => {
                                           .then((createdConnectClient) => {
 
                                             // 3. create realm role
-                                            const roleName = 'org_admin';
+                                            const roleName = 'org-admin';
                                             const newRole = {
                                               name: roleName
                                             };
@@ -353,7 +353,7 @@ app.post('/admin/create_org', (req, res) => {
                                                     // 5. create client scope
                                                     const { access_token } = adminLogin;
                                                     url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/client-scopes`;
-                                                    const newClientScopeName = 'client_attribute_scope';
+                                                    const newClientScopeName = 'client-attribute-scope';
                                                     const newClientScope = {
                                                       attributes: {
                                                         "display.on.consent.screen": true
