@@ -306,328 +306,354 @@ app.post('/admin/create_org', (req, res) => {
                                       fullScopeAllowed: false,
                                       defaultClientScopes: []
                                     };
+
+                                    const connectClientName = 'nodejs-connect';
+                                    const newConnectClient = {
+                                      clientId: connectClientName,
+                                      baseUrl: 'http://localhost:8888/',
+                                      redirectUris: [
+                                        'http://localhost:8888/*'
+                                      ],
+                                      webOrigins: [
+                                        'http://localhost:8888/*'
+                                      ],
+                                      publicClient: true,
+                                      fullScopeAllowed: false,
+                                      defaultClientScopes: []
+                                    };
+
                                     client.clients.create(createdRealm.realm, newServerClient)
-                                      .then((createdClient) => {
+                                      .then((createdServerClient) => {
 
-                                        // 3. create realm role
-                                        const roleName = 'org_admin';
-                                        const newRole = {
-                                          name: roleName
-                                        };
-                                        client.realms.roles.create(createdRealm.realm, newRole)
-                                          .then((createdRole) => {
+                                        client.clients.create(createdRealm.realm, newConnectClient)
+                                          .then((createdConnectClient) => {
 
-                                            // 4. admin login
-                                            let url = `http://localhost:8080/auth/realms/master/protocol/openid-connect/token`;
-                                            let params = qs.stringify({
-                                              username: 'admin',
-                                              password: 'admin',
-                                              client_id: 'admin-cli',
-                                              grant_type: 'password'
-                                            });
-                                            axios.post(url, params, {
-                                              'Content-Type': 'application/x-www-form-urlencoded;'
-                                            })
-                                              .then((response) => (response.data))
-                                              .then(adminLogin => {
+                                            // 3. create realm role
+                                            const roleName = 'org_admin';
+                                            const newRole = {
+                                              name: roleName
+                                            };
+                                            client.realms.roles.create(createdRealm.realm, newRole)
+                                              .then((createdRole) => {
 
-                                                // 5. create client scope
-                                                const { access_token } = adminLogin;
-                                                url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/client-scopes`;
-                                                const newClientScopeName = 'client_attribute_scope';
-                                                const newClientScope = {
-                                                  attributes: {
-                                                    "display.on.consent.screen": true
-                                                  },
-                                                  name: newClientScopeName,
-                                                  protocol: "openid-connect"
-                                                };
-
-                                                axios.post(url, newClientScope, {
-                                                  headers: { 'Authorization': "Bearer " + access_token }
+                                                // 4. admin login
+                                                let url = `http://localhost:8080/auth/realms/master/protocol/openid-connect/token`;
+                                                let params = qs.stringify({
+                                                  username: 'admin',
+                                                  password: 'admin',
+                                                  client_id: 'admin-cli',
+                                                  grant_type: 'password'
+                                                });
+                                                axios.post(url, params, {
+                                                  'Content-Type': 'application/x-www-form-urlencoded;'
                                                 })
-                                                  .then((response) => (response.headers.location))
-                                                  .then((location) => {
+                                                  .then((response) => (response.data))
+                                                  .then(adminLogin => {
 
-                                                    // 6. create mapper to add attribute in client scope
-                                                    const createdClientScope = location.split("/");
-                                                    const createdClientScopeId = createdClientScope[createdClientScope.length - 1];
-                                                    url = `${location}/protocol-mappers/models`;
-                                                    const newClientScopeMapper1 = {
-                                                      config: {
-                                                        "access.token.claim": "true",
-                                                        "claim.name": "dbName",
-                                                        "id.token.claim": "true",
-                                                        "jsonType.label": "String",
-                                                        "multivalued": "",
-                                                        "user.attribute": "dbName",
-                                                        "userinfo.token.claim": "true"
+                                                    // 5. create client scope
+                                                    const { access_token } = adminLogin;
+                                                    url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/client-scopes`;
+                                                    const newClientScopeName = 'client_attribute_scope';
+                                                    const newClientScope = {
+                                                      attributes: {
+                                                        "display.on.consent.screen": true
                                                       },
-                                                      name: "dbName",
-                                                      protocol: "openid-connect",
-                                                      protocolMapper: "oidc-usermodel-attribute-mapper"
+                                                      name: newClientScopeName,
+                                                      protocol: "openid-connect"
                                                     };
-                                                    const newClientScopeMapper2 = {
-                                                      config: {
-                                                        "access.token.claim": "true",
-                                                        "claim.name": "dbPassword",
-                                                        "id.token.claim": "true",
-                                                        "jsonType.label": "String",
-                                                        "multivalued": "",
-                                                        "user.attribute": "dbPassword",
-                                                        "userinfo.token.claim": "true"
-                                                      },
-                                                      name: "dbPassword",
-                                                      protocol: "openid-connect",
-                                                      protocolMapper: "oidc-usermodel-attribute-mapper"
-                                                    };
-                                                    const newClientScopeMapper3 = {
-                                                      config: {
-                                                        "access.token.claim": "true",
-                                                        "claim.name": "orgName",
-                                                        "id.token.claim": "true",
-                                                        "jsonType.label": "String",
-                                                        "multivalued": "",
-                                                        "user.attribute": "orgName",
-                                                        "userinfo.token.claim": "true"
-                                                      },
-                                                      name: "orgName",
-                                                      protocol: "openid-connect",
-                                                      protocolMapper: "oidc-usermodel-attribute-mapper"
-                                                    };
-                                                    // 6.1
-                                                    axios.post(url, newClientScopeMapper1, {
+
+                                                    axios.post(url, newClientScope, {
                                                       headers: { 'Authorization': "Bearer " + access_token }
                                                     })
-                                                      .then((response) => (response.data))
-                                                      .then(() => {
-                                                        // 6.2
-                                                        axios.post(url, newClientScopeMapper2, {
+                                                      .then((response) => (response.headers.location))
+                                                      .then((location) => {
+
+                                                        // 6. create mapper to add attribute in client scope
+                                                        const createdClientScope = location.split("/");
+                                                        const createdClientScopeId = createdClientScope[createdClientScope.length - 1];
+                                                        url = `${location}/protocol-mappers/models`;
+                                                        const newClientScopeMapper1 = {
+                                                          config: {
+                                                            "access.token.claim": "true",
+                                                            "claim.name": "dbName",
+                                                            "id.token.claim": "true",
+                                                            "jsonType.label": "String",
+                                                            "multivalued": "",
+                                                            "user.attribute": "dbName",
+                                                            "userinfo.token.claim": "true"
+                                                          },
+                                                          name: "dbName",
+                                                          protocol: "openid-connect",
+                                                          protocolMapper: "oidc-usermodel-attribute-mapper"
+                                                        };
+                                                        const newClientScopeMapper2 = {
+                                                          config: {
+                                                            "access.token.claim": "true",
+                                                            "claim.name": "dbPassword",
+                                                            "id.token.claim": "true",
+                                                            "jsonType.label": "String",
+                                                            "multivalued": "",
+                                                            "user.attribute": "dbPassword",
+                                                            "userinfo.token.claim": "true"
+                                                          },
+                                                          name: "dbPassword",
+                                                          protocol: "openid-connect",
+                                                          protocolMapper: "oidc-usermodel-attribute-mapper"
+                                                        };
+                                                        const newClientScopeMapper3 = {
+                                                          config: {
+                                                            "access.token.claim": "true",
+                                                            "claim.name": "orgName",
+                                                            "id.token.claim": "true",
+                                                            "jsonType.label": "String",
+                                                            "multivalued": "",
+                                                            "user.attribute": "orgName",
+                                                            "userinfo.token.claim": "true"
+                                                          },
+                                                          name: "orgName",
+                                                          protocol: "openid-connect",
+                                                          protocolMapper: "oidc-usermodel-attribute-mapper"
+                                                        };
+                                                        // 6.1
+                                                        axios.post(url, newClientScopeMapper1, {
                                                           headers: { 'Authorization': "Bearer " + access_token }
                                                         })
                                                           .then((response) => (response.data))
                                                           .then(() => {
-                                                            // 6.3
-                                                            axios.post(url, newClientScopeMapper3, {
+                                                            // 6.2
+                                                            axios.post(url, newClientScopeMapper2, {
                                                               headers: { 'Authorization': "Bearer " + access_token }
                                                             })
                                                               .then((response) => (response.data))
                                                               .then(() => {
-
-                                                                // 7. add client scope to client
-                                                                url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdClient.id}/default-client-scopes/${createdClientScopeId}`;
-                                                                const updateClient = {
-                                                                  client: createdClient.id,
-                                                                  clientScopeId: createdClientScopeId,
-                                                                  realm: createdRealm.realm
-                                                                };
-                                                                axios.put(url, updateClient, {
+                                                                // 6.3
+                                                                axios.post(url, newClientScopeMapper3, {
                                                                   headers: { 'Authorization': "Bearer " + access_token }
                                                                 })
                                                                   .then((response) => (response.data))
                                                                   .then(() => {
 
-                                                                    // 8. authorization
-                                                                    // 8.1 scope
-                                                                    // 8.2 resource
-                                                                    // 8.3 policy
-                                                                    // 8.4 permission
-                                                                    url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdClient.id}/authz/resource-server/scope`;
-                                                                    const newAuthScope = {
-                                                                      name: "create"
+                                                                    // 7. add client scope to client
+                                                                    url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdConnectClient.id}/default-client-scopes/${createdClientScopeId}`;
+                                                                    const updateClient = {
+                                                                      client: createdConnectClient.id,
+                                                                      clientScopeId: createdClientScopeId,
+                                                                      realm: createdRealm.realm
                                                                     };
-                                                                    axios.post(url, newAuthScope, {
+                                                                    axios.put(url, updateClient, {
                                                                       headers: { 'Authorization': "Bearer " + access_token }
                                                                     })
                                                                       .then((response) => (response.data))
-                                                                      .then((createdAuthScope) => {
+                                                                      .then(() => {
 
-                                                                        url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdClient.id}/authz/resource-server/resource`;
-                                                                        const authResourceName = 'res1'
-                                                                        const newAuthResource = {
-                                                                          attributes: {},
-                                                                          displayName: authResourceName,
-                                                                          name: authResourceName,
-                                                                          ownerManagedAccess: "",
-                                                                          scopes: [
-                                                                            createdAuthScope
-                                                                          ],
-                                                                          uris: []
+                                                                        // 8. authorization
+                                                                        // 8.1 scope
+                                                                        // 8.2 resource
+                                                                        // 8.3 policy
+                                                                        // 8.4 permission
+                                                                        url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdServerClient.id}/authz/resource-server/scope`;
+                                                                        const newAuthScope = {
+                                                                          name: "create"
                                                                         };
-                                                                        axios.post(url, newAuthResource, {
+                                                                        axios.post(url, newAuthScope, {
                                                                           headers: { 'Authorization': "Bearer " + access_token }
                                                                         })
                                                                           .then((response) => (response.data))
-                                                                          .then((createdAuthResource) => {
+                                                                          .then((createdAuthScope) => {
 
-                                                                            url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdClient.id}/authz/resource-server/policy/role`;
-                                                                            const authPolicyName = 'policy1'
-                                                                            const newAuthPolicy = {
-                                                                              decisionStrategy: "UNANIMOUS",
-                                                                              logic: "POSITIVE",
-                                                                              name: authPolicyName,
-                                                                              roles: [
-                                                                                {
-                                                                                  "id": createdRole.id,
-                                                                                  "required": true
-                                                                                }
+                                                                            url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdServerClient.id}/authz/resource-server/resource`;
+                                                                            const authResourceName = 'res1'
+                                                                            const newAuthResource = {
+                                                                              attributes: {},
+                                                                              displayName: authResourceName,
+                                                                              name: authResourceName,
+                                                                              ownerManagedAccess: "",
+                                                                              scopes: [
+                                                                                createdAuthScope
                                                                               ],
-                                                                              type: "role"
+                                                                              uris: []
                                                                             };
-                                                                            axios.post(url, newAuthPolicy, {
+                                                                            axios.post(url, newAuthResource, {
                                                                               headers: { 'Authorization': "Bearer " + access_token }
                                                                             })
                                                                               .then((response) => (response.data))
-                                                                              .then((createdAuthPolicy) => {
+                                                                              .then((createdAuthResource) => {
 
-                                                                                url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdClient.id}/authz/resource-server/permission/resource`;
-                                                                                const authPermissionName = 'permission1'
-                                                                                const newAuthPermission = {
+                                                                                url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdServerClient.id}/authz/resource-server/policy/role`;
+                                                                                const authPolicyName = 'policy1'
+                                                                                const newAuthPolicy = {
                                                                                   decisionStrategy: "UNANIMOUS",
                                                                                   logic: "POSITIVE",
-                                                                                  name: authPermissionName,
-                                                                                  policies: [createdAuthPolicy.id],
-                                                                                  resources: [createdAuthResource._id],
-                                                                                  type: "resource"
+                                                                                  name: authPolicyName,
+                                                                                  roles: [
+                                                                                    {
+                                                                                      "id": createdRole.id,
+                                                                                      "required": true
+                                                                                    }
+                                                                                  ],
+                                                                                  type: "role"
                                                                                 };
-                                                                                axios.post(url, newAuthPermission, {
+                                                                                axios.post(url, newAuthPolicy, {
                                                                                   headers: { 'Authorization': "Bearer " + access_token }
                                                                                 })
                                                                                   .then((response) => (response.data))
-                                                                                  .then((createdAuthPermission) => {
+                                                                                  .then((createdAuthPolicy) => {
 
-                                                                                    // 9. create org admin user
-                                                                                    let user = {
-                                                                                      username: email,
-                                                                                      email,
-                                                                                      firstName,
-                                                                                      lastName,
-                                                                                      emailVerified: false,
-                                                                                      enabled: true,
-                                                                                      attributes: {
-                                                                                        orgName,
-                                                                                        dbUserName,
-                                                                                        dbPassword: '123456'
-                                                                                      }
+                                                                                    url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdServerClient.id}/authz/resource-server/permission/resource`;
+                                                                                    const authPermissionName = 'permission1'
+                                                                                    const newAuthPermission = {
+                                                                                      decisionStrategy: "UNANIMOUS",
+                                                                                      logic: "POSITIVE",
+                                                                                      name: authPermissionName,
+                                                                                      policies: [createdAuthPolicy.id],
+                                                                                      resources: [createdAuthResource._id],
+                                                                                      type: "resource"
                                                                                     };
-                                                                                    client.users.create(createdRealm.realm, user)
-                                                                                      .then((newUser) => {
-                                                                                        const updateUser = {
-                                                                                          type: 'password',
-                                                                                          value: password
-                                                                                        };
-                                                                                        client.users.resetPassword(createdRealm.realm, newUser.id, updateUser)
-                                                                                          .then(() => {
+                                                                                    axios.post(url, newAuthPermission, {
+                                                                                      headers: { 'Authorization': "Bearer " + access_token }
+                                                                                    })
+                                                                                      .then((response) => (response.data))
+                                                                                      .then((createdAuthPermission) => {
 
-                                                                                            // 10. add realm role to keycloak user
-                                                                                            client.realms.maps.map(createdRealm.realm, newUser.id,
-                                                                                              [
-                                                                                                {
-                                                                                                  id: createdRole.id,
-                                                                                                  name: newRole.name
-                                                                                                },
-                                                                                              ])
+                                                                                        // 9. create org admin user
+                                                                                        let user = {
+                                                                                          username: email,
+                                                                                          email,
+                                                                                          firstName,
+                                                                                          lastName,
+                                                                                          emailVerified: false,
+                                                                                          enabled: true,
+                                                                                          attributes: {
+                                                                                            orgName,
+                                                                                            dbUserName,
+                                                                                            dbPassword: '123456'
+                                                                                          }
+                                                                                        };
+                                                                                        client.users.create(createdRealm.realm, user)
+                                                                                          .then((newUser) => {
+                                                                                            const updateUser = {
+                                                                                              type: 'password',
+                                                                                              value: password
+                                                                                            };
+                                                                                            client.users.resetPassword(createdRealm.realm, newUser.id, updateUser)
                                                                                               .then(() => {
 
-                                                                                                // 11. add realm management to keycloak user
-                                                                                                client.clients.find(createdRealm.realm, { clientId: 'realm-management' })
-                                                                                                  .then(realmManagementClient => {
+                                                                                                // 10. add realm role to keycloak user
+                                                                                                client.realms.maps.map(createdRealm.realm, newUser.id,
+                                                                                                  [
+                                                                                                    {
+                                                                                                      id: createdRole.id,
+                                                                                                      name: newRole.name
+                                                                                                    },
+                                                                                                  ])
+                                                                                                  .then(() => {
 
-                                                                                                    if (!realmManagementClient.length) {
-                                                                                                      return res.json({
-                                                                                                        confirmation: 'fail',
-                                                                                                        message: 'fail to find the realm management client'
-                                                                                                      })
-                                                                                                    }
-                                                                                                    const realmManagementClientId = realmManagementClient[0].id;
-                                                                                                    client.clients.roles.find(createdRealm.realm, realmManagementClientId)
-                                                                                                      .then((clientRoles) => {
+                                                                                                    // 11. add realm management to keycloak user
+                                                                                                    client.clients.find(createdRealm.realm, { clientId: 'realm-management' })
+                                                                                                      .then(realmManagementClient => {
 
-                                                                                                        url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/users/${newUser.id}/role-mappings/clients/${realmManagementClientId}`;
-                                                                                                        axios.post(url, clientRoles, {
-                                                                                                          headers: {
-                                                                                                            'Authorization': "Bearer " + access_token
-                                                                                                          }
-                                                                                                        })
-                                                                                                          .then(() => {
-                                                                                                            return res.json({
-                                                                                                              newUser
+                                                                                                        if (!realmManagementClient.length) {
+                                                                                                          return res.json({
+                                                                                                            confirmation: 'fail',
+                                                                                                            message: 'fail to find the realm management client'
+                                                                                                          })
+                                                                                                        }
+                                                                                                        const realmManagementClientId = realmManagementClient[0].id;
+                                                                                                        client.clients.roles.find(createdRealm.realm, realmManagementClientId)
+                                                                                                          .then((clientRoles) => {
+
+                                                                                                            url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/users/${newUser.id}/role-mappings/clients/${realmManagementClientId}`;
+                                                                                                            axios.post(url, clientRoles, {
+                                                                                                              headers: {
+                                                                                                                'Authorization': "Bearer " + access_token
+                                                                                                              }
                                                                                                             })
+                                                                                                              .then(() => {
+                                                                                                                return res.json({
+                                                                                                                  newUser
+                                                                                                                })
+                                                                                                              })
+                                                                                                              .catch(err => {
+                                                                                                                return res.json({
+                                                                                                                  confirmation: 'fail',
+                                                                                                                  message: 'fail to add realm client role to user'
+                                                                                                                })
+                                                                                                              })
                                                                                                           })
                                                                                                           .catch(err => {
                                                                                                             return res.json({
                                                                                                               confirmation: 'fail',
-                                                                                                              message: 'fail to add realm client role to user'
+                                                                                                              message: 'fail to get realm client roles'
                                                                                                             })
                                                                                                           })
                                                                                                       })
                                                                                                       .catch(err => {
                                                                                                         return res.json({
                                                                                                           confirmation: 'fail',
-                                                                                                          message: 'fail to get realm client roles'
+                                                                                                          message: 'fail to get realm client'
                                                                                                         })
                                                                                                       })
                                                                                                   })
-                                                                                                  .catch(err => {
+                                                                                                  .catch((err) => {
                                                                                                     return res.json({
                                                                                                       confirmation: 'fail',
-                                                                                                      message: 'fail to get realm client'
+                                                                                                      message: 'fail to add role to user'
                                                                                                     })
                                                                                                   })
                                                                                               })
                                                                                               .catch((err) => {
                                                                                                 return res.json({
                                                                                                   confirmation: 'fail',
-                                                                                                  message: 'fail to add role to user'
+                                                                                                  message: 'fail to update keycloak user'
                                                                                                 })
                                                                                               })
                                                                                           })
                                                                                           .catch((err) => {
                                                                                             return res.json({
                                                                                               confirmation: 'fail',
-                                                                                              message: 'fail to update keycloak user'
+                                                                                              message: 'fail to create keycloak user'
                                                                                             })
                                                                                           })
                                                                                       })
                                                                                       .catch((err) => {
                                                                                         return res.json({
                                                                                           confirmation: 'fail',
-                                                                                          message: 'fail to create keycloak user'
+                                                                                          message: 'fail to create auth permission'
                                                                                         })
                                                                                       })
                                                                                   })
                                                                                   .catch((err) => {
                                                                                     return res.json({
                                                                                       confirmation: 'fail',
-                                                                                      message: 'fail to create auth permission'
+                                                                                      message: 'fail to create auth policy'
                                                                                     })
                                                                                   })
                                                                               })
                                                                               .catch((err) => {
                                                                                 return res.json({
                                                                                   confirmation: 'fail',
-                                                                                  message: 'fail to create auth policy'
+                                                                                  message: 'fail to create auth resource'
                                                                                 })
                                                                               })
                                                                           })
                                                                           .catch((err) => {
                                                                             return res.json({
                                                                               confirmation: 'fail',
-                                                                              message: 'fail to create auth resource'
+                                                                              message: 'fail to create auth scope'
                                                                             })
                                                                           })
                                                                       })
                                                                       .catch((err) => {
                                                                         return res.json({
                                                                           confirmation: 'fail',
-                                                                          message: 'fail to create auth scope'
+                                                                          message: 'fail to add client scope to client'
                                                                         })
                                                                       })
                                                                   })
                                                                   .catch((err) => {
                                                                     return res.json({
                                                                       confirmation: 'fail',
-                                                                      message: 'fail to add client scope to client'
+                                                                      message: 'fail to create client scope mapper'
                                                                     })
                                                                   })
                                                               })
@@ -648,35 +674,36 @@ app.post('/admin/create_org', (req, res) => {
                                                       .catch((err) => {
                                                         return res.json({
                                                           confirmation: 'fail',
-                                                          message: 'fail to create client scope mapper'
+                                                          message: 'fail to create client scope'
                                                         })
                                                       })
                                                   })
                                                   .catch((err) => {
                                                     return res.json({
                                                       confirmation: 'fail',
-                                                      message: 'fail to create client scope'
+                                                      message: 'fail to admin login'
                                                     })
                                                   })
                                               })
                                               .catch((err) => {
                                                 return res.json({
                                                   confirmation: 'fail',
-                                                  message: 'fail to admin login'
+                                                  message: 'fail to create realm role'
                                                 })
                                               })
+
                                           })
                                           .catch((err) => {
                                             return res.json({
                                               confirmation: 'fail',
-                                              message: 'fail to create realm role'
+                                              message: 'fail to create connect client'
                                             })
                                           })
                                       })
                                       .catch((err) => {
                                         return res.json({
                                           confirmation: 'fail',
-                                          message: 'fail to create client'
+                                          message: 'fail to create server client'
                                         })
                                       })
                                   })
