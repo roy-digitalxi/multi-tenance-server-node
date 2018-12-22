@@ -448,7 +448,7 @@ app.post('/admin/create_org', (req, res) => {
                                                                       .then(() => {
                                                                         // 7.2 scope
                                                                         url = `http://localhost:8080/auth/admin/realms/${createdRealm.realm}/clients/${createdConnectClient.id}/scope-mappings/realm`;
-                                                                        axios.put(url, [createdRole], {
+                                                                        axios.post(url, [createdRole], {
                                                                           headers: { 'Authorization': "Bearer " + access_token }
                                                                         })
                                                                           .then(() => {
