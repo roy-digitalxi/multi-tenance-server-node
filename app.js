@@ -59,7 +59,7 @@ app.get('/login', keycloak.protect(), (req, res) => {
   })
 })
 
-app.post('/test', keycloak.enforcer(['res1:view'],
+app.post('/test', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
     response_mode: 'permissions'
