@@ -53,11 +53,13 @@ app.use(keycloak.middleware({
   admin: '/',
 }));
 
+
 app.get('/login', keycloak.protect(), (req, res) => {
   return res.json({
     result: JSON.stringify(JSON.parse(req.session['keycloak-token']), null, 4),
   })
 })
+
 
 app.post('/test', keycloak.enforcer(['res1:create'],
   {
@@ -80,7 +82,6 @@ app.post('/test', keycloak.enforcer(['res1:create'],
       })
     })
 })
-
 
 
 // admin api
