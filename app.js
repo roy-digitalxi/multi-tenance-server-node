@@ -50,10 +50,18 @@ app.post('/test', keycloak.enforcer(['res1:view'],
 ), (req, res) => {
 
   const token = req.kauth.grant.access_token.token;
-  return res.json({
-    token,
-    confirmation: 'success'
-  })
+  keycloak.getAccount(req.query.realm, token)
+    .then((user) => {
+      return res.json({
+        confirmation: 'success',
+        user,
+      })
+    })
+    .catch(err => {
+      return res.json({
+        confirmation: 'fail',
+      })
+    })
 })
 
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
