@@ -291,9 +291,9 @@ app.post('/admin/create_org', (req, res) => {
                                   .then((createdRealm) => {
 
                                     // 2. create client
-                                    const clientName = 'nodejs-apiserver';
-                                    const newClient = {
-                                      clientId: clientName,
+                                    const serverClientName = 'nodejs-apiserver';
+                                    const newServerClient = {
+                                      clientId: serverClientName,
                                       redirectUris: [
                                         'http://localhost:8888/*'
                                       ],
@@ -306,7 +306,7 @@ app.post('/admin/create_org', (req, res) => {
                                       fullScopeAllowed: false,
                                       defaultClientScopes: []
                                     };
-                                    client.clients.create(createdRealm.realm, newClient)
+                                    client.clients.create(createdRealm.realm, newServerClient)
                                       .then((createdClient) => {
 
                                         // 3. create realm role
@@ -552,7 +552,7 @@ app.post('/admin/create_org', (req, res) => {
                                                                                                           .then(() => {
                                                                                                             return res.json({
                                                                                                               newUser
-                                                                                                            })                                                                                            
+                                                                                                            })
                                                                                                           })
                                                                                                           .catch(err => {
                                                                                                             return res.json({
