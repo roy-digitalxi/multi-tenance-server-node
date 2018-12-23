@@ -61,24 +61,143 @@ app.get('/login', keycloak.protect(), (req, res) => {
 })
 
 
-app.post('/test', keycloak.enforcer(['res1:create'],
+// 1.
+app.post('/mongodb_create', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
     response_mode: 'permissions'
   }
 ), (req, res) => {
-
   const token = req.kauth.grant.access_token.token;
-  keycloak.getAccount(req.query.realm, token)
+  keycloak.getAccount(token)
     .then((user) => {
-      return res.json({
-        confirmation: 'success',
-        user,
+
+      const {
+        dbUserName,
+        dbPassword,
+      } = user;
+
+      if (!dbUserName) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbUserName is required'
+        })
+      }
+
+      if (!dbPassword) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbPassword is required'
+        })
+      }
+
+      const dbName = dbUserName;
+
+      MongoClient.connect(`mongodb://${dbUserName}:${dbPassword}@localhost:27017/${dbName}`, { useNewUrlParser: true }, (err, db) => {
+        if (err) {
+          return res.json({
+            confirmation: 'fail',
+            message: 'fail to connect db'
+          })
+        }
+
+        const dbo = db.db(dbName);
+        const myobj = { name: "Company Inc", address: "Highway 37" };
+        dbo.collection("test").insertOne(myobj, (err, result) => {
+          db.close();
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              message: 'fail to insert data to collection'
+            })
+          }
+
+          return res.json({
+            confirmation: 'success',
+            message: 'inserted to the corresponding db',
+          })
+        })
       })
+
     })
-    .catch(err => {
+    .catch((error) => {
       return res.json({
         confirmation: 'fail',
+        message: 'fail to get keycloak account'
+      })
+    })
+})
+
+// 2. 
+app.post('/mongodb_view', keycloak.enforcer(['res1:create'],
+  {
+    resource_server_id: 'nodejs-apiserver',
+    response_mode: 'permissions'
+  }
+), (req, res) => {
+  const token = req.kauth.grant.access_token.token;
+  keycloak.getAccount(token)
+    .then((user) => {
+
+      const {
+        dbUserName,
+        dbPassword,
+      } = user;
+
+      if (!dbUserName) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbUserName is required'
+        })
+      }
+
+      if (!dbPassword) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbPassword is required'
+        })
+      }
+
+      const dbName = dbUserName;
+
+      console.log('dbUserName: ', dbUserName);
+      console.log('dbPassword: ', dbPassword);
+      console.log('dbName: ', dbName);
+
+      MongoClient.connect(`mongodb://${dbUserName}:${dbPassword}@localhost:27017/${dbName}`, { useNewUrlParser: true }, (err, db) => {
+        if (err) {
+          return res.json({
+            confirmation: 'fail',
+            message: 'fail to connect db'
+          })
+        }
+
+        const dbo = db.db(dbName);
+        dbo.collection("test").find().toArray((err, result) => {
+          db.close();
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              message: 'fail to fetch'
+            })
+          }
+
+          return res.json({
+            confirmation: 'success',
+            totalRecords: result.length,
+            response: result
+          })
+        })
+      })
+
+    })
+    .catch((error) => {
+
+      console.log('error: ', error);
+      
+      return res.json({
+        confirmation: 'fail',
+        message: 'fail to get keycloak account'
       })
     })
 })
