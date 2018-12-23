@@ -69,7 +69,7 @@ app.post('/mongodb_create', keycloak.enforcer(['res1:create'],
   }
 ), (req, res) => {
   const token = req.kauth.grant.access_token.token;
-  keycloak.getAccount(token)
+  keycloak.getAccount(req.query.realm, token)
     .then((user) => {
 
       const {
@@ -136,65 +136,70 @@ app.post('/mongodb_view', keycloak.enforcer(['res1:create'],
   }
 ), (req, res) => {
   const token = req.kauth.grant.access_token.token;
-  keycloak.getAccount(token)
+
+  console.log('token: ', token);
+
+  keycloak.getAccount(req.query.realm, token)
     .then((user) => {
 
-      const {
-        dbUserName,
-        dbPassword,
-      } = user;
+      console.log('user: ', user);
 
-      if (!dbUserName) {
-        return res.json({
-          confirmation: 'fail',
-          message: 'dbUserName is required'
-        })
-      }
+      // const {
+      //   dbUserName,
+      //   dbPassword,
+      // } = user;
 
-      if (!dbPassword) {
-        return res.json({
-          confirmation: 'fail',
-          message: 'dbPassword is required'
-        })
-      }
+      // if (!dbUserName) {
+      //   return res.json({
+      //     confirmation: 'fail',
+      //     message: 'dbUserName is required'
+      //   })
+      // }
 
-      const dbName = dbUserName;
+      // if (!dbPassword) {
+      //   return res.json({
+      //     confirmation: 'fail',
+      //     message: 'dbPassword is required'
+      //   })
+      // }
 
-      console.log('dbUserName: ', dbUserName);
-      console.log('dbPassword: ', dbPassword);
-      console.log('dbName: ', dbName);
+      // const dbName = dbUserName;
 
-      MongoClient.connect(`mongodb://${dbUserName}:${dbPassword}@localhost:27017/${dbName}`, { useNewUrlParser: true }, (err, db) => {
-        if (err) {
-          return res.json({
-            confirmation: 'fail',
-            message: 'fail to connect db'
-          })
-        }
+      // console.log('dbUserName: ', dbUserName);
+      // console.log('dbPassword: ', dbPassword);
+      // console.log('dbName: ', dbName);
 
-        const dbo = db.db(dbName);
-        dbo.collection("test").find().toArray((err, result) => {
-          db.close();
-          if (err) {
-            return res.json({
-              confirmation: 'fail',
-              message: 'fail to fetch'
-            })
-          }
+      // MongoClient.connect(`mongodb://${dbUserName}:${dbPassword}@localhost:27017/${dbName}`, { useNewUrlParser: true }, (err, db) => {
+      //   if (err) {
+      //     return res.json({
+      //       confirmation: 'fail',
+      //       message: 'fail to connect db'
+      //     })
+      //   }
 
-          return res.json({
-            confirmation: 'success',
-            totalRecords: result.length,
-            response: result
-          })
-        })
-      })
+      //   const dbo = db.db(dbName);
+      //   dbo.collection("test").find().toArray((err, result) => {
+      //     db.close();
+      //     if (err) {
+      //       return res.json({
+      //         confirmation: 'fail',
+      //         message: 'fail to fetch'
+      //       })
+      //     }
+
+      //     return res.json({
+      //       confirmation: 'success',
+      //       totalRecords: result.length,
+      //       response: result
+      //     })
+      //   })
+      // })
 
     })
     .catch((error) => {
 
       console.log('error: ', error);
-      
+
       return res.json({
         confirmation: 'fail',
         message: 'fail to get keycloak account'
@@ -494,14 +499,14 @@ app.post('/admin/create_org', (req, res) => {
                                                         const newClientScopeMapper1 = {
                                                           config: {
                                                             "access.token.claim": "true",
-                                                            "claim.name": "dbName",
+                                                            "claim.name": "dbUserName",
                                                             "id.token.claim": "true",
                                                             "jsonType.label": "String",
                                                             "multivalued": "",
-                                                            "user.attribute": "dbName",
+                                                            "user.attribute": "dbUserName",
                                                             "userinfo.token.claim": "true"
                                                           },
-                                                          name: "dbName",
+                                                          name: "dbUserName",
                                                           protocol: "openid-connect",
                                                           protocolMapper: "oidc-usermodel-attribute-mapper"
                                                         };
