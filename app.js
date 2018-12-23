@@ -195,6 +195,160 @@ app.post('/mongodb_view', keycloak.enforcer(['res1:create'],
     })
 })
 
+// 3.
+app.post('/mysql_create', keycloak.enforcer(['res1:create'],
+  {
+    resource_server_id: 'nodejs-apiserver',
+    response_mode: 'permissions'
+  }
+), (req, res) => {
+  const token = req.kauth.grant.access_token.token;
+  keycloak.getAccount(req.query.realm, token)
+    .then((user) => {
+
+      const {
+        dbUserName,
+        dbPassword,
+      } = user;
+
+      if (!dbUserName) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbUserName is required'
+        })
+      }
+
+      if (!dbPassword) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbPassword is required'
+        })
+      }
+
+      const dbName = dbUserName;
+
+      var con = mysql.createConnection({
+        host: `localhost`,
+        user: dbName,
+        password: dbPassword,
+        database: dbName
+      });
+
+      con.connect((err) => {
+        if (err) {
+
+          con.end();
+
+          return res.json({
+            confirmation: 'fail to connect db',
+            err,
+          })
+        }
+
+        var sql = `INSERT INTO customers (name, address) VALUES ('test', '199 street')`;
+        con.query(sql, (err, result) => {
+
+          con.end();
+
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              err,
+            })
+          }
+          return res.json({
+            confirmation: 'success',
+            message: 'insert it to db'
+          })
+        })
+
+      })
+    })
+    .catch((error) => {
+      return res.json({
+        confirmation: 'fail',
+        message: 'fail to get keycloak account'
+      })
+    })
+})
+
+
+// 4.
+app.post('/mysql_view', keycloak.enforcer(['res1:create'],
+  {
+    resource_server_id: 'nodejs-apiserver',
+    response_mode: 'permissions'
+  }
+), (req, res) => {
+  const token = req.kauth.grant.access_token.token;
+  keycloak.getAccount(req.query.realm, token)
+    .then((user) => {
+
+      const {
+        dbUserName,
+        dbPassword,
+      } = user;
+
+      if (!dbUserName) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbUserName is required'
+        })
+      }
+
+      if (!dbPassword) {
+        return res.json({
+          confirmation: 'fail',
+          message: 'dbPassword is required'
+        })
+      }
+
+      const dbName = dbUserName;
+
+      var con = mysql.createConnection({
+        host: `localhost`,
+        user: dbName,
+        password: dbPassword,
+        database: dbName
+      });
+
+      con.connect((err) => {
+        if (err) {
+
+          con.end();
+
+          return res.json({
+            confirmation: 'fail to connect db',
+            err,
+          })
+        }
+
+        con.query("SELECT * FROM customers", function (err, result) {
+
+          con.end();
+
+          if (err) {
+            return res.json({
+              confirmation: 'fail',
+              err,
+            })
+          };
+          return res.json({
+            confirmation: 'success',
+            totalRecords: result.length,
+            result
+          })
+        })
+      })
+    })
+    .catch((error) => {
+      return res.json({
+        confirmation: 'fail',
+        message: 'fail to get keycloak account'
+      })
+    })
+})
+
 
 // admin api
 app.post('/admin/create_org', (req, res) => {
