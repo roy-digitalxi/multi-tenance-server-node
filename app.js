@@ -1,21 +1,13 @@
 const express = require('express');
 const bodyParser = require("body-parser");
-const uuid = require("uuid-v4");
-const path = require("path");
-const moment = require("moment-timezone");
 const axios = require("axios");
 const qs = require('qs');
-const fs = require('fs');
 
 
 // keycloak
 const adminClient = require('keycloak-admin-client');
 const KeycloakMultirealm = require('keycloak-connect-multirealm');
 const session = require('express-session');
-
-
-// basic setup
-const port = (process.env.PORT || 8888);
 
 
 // DB
@@ -26,9 +18,11 @@ const mongoose = require('mongoose');
 
 // express
 const app = express();
+const port = (process.env.PORT || 8888);
 app.use(bodyParser.json());
 
 
+// keycloak session
 const memoryStore = new session.MemoryStore();
 const config = { store: memoryStore };
 const keycloakConfig = {
@@ -54,6 +48,7 @@ app.use(keycloak.middleware({
 }));
 
 
+// eg. http://localhost:8888/login?realm=org94146
 app.get('/login', keycloak.protect(), (req, res) => {
   return res.json({
     result: JSON.stringify(JSON.parse(req.session['keycloak-token']), null, 4),
@@ -61,7 +56,7 @@ app.get('/login', keycloak.protect(), (req, res) => {
 })
 
 
-// 1.
+// eg. http://localhost:8888/mongodb_create?realm=org94146
 app.post('/mongodb_create', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
@@ -128,7 +123,8 @@ app.post('/mongodb_create', keycloak.enforcer(['res1:create'],
     })
 })
 
-// 2. 
+
+// eg. http://localhost:8888/mongodb_view?realm=org94146
 app.post('/mongodb_view', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
@@ -195,7 +191,8 @@ app.post('/mongodb_view', keycloak.enforcer(['res1:create'],
     })
 })
 
-// 3.
+
+// eg. http://localhost:8888/mysql_create?realm=org94146
 app.post('/mysql_create', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
@@ -273,7 +270,7 @@ app.post('/mysql_create', keycloak.enforcer(['res1:create'],
 })
 
 
-// 4.
+// eg. http://localhost:8888/mysql_view?realm=org94146
 app.post('/mysql_view', keycloak.enforcer(['res1:create'],
   {
     resource_server_id: 'nodejs-apiserver',
@@ -350,7 +347,7 @@ app.post('/mysql_view', keycloak.enforcer(['res1:create'],
 })
 
 
-// admin api
+// eg. localhost:8888/admin/create_org
 app.post('/admin/create_org', (req, res) => {
 
   const {
@@ -1020,7 +1017,11 @@ app.post('/admin/create_org', (req, res) => {
   })
 })
 
+
 app.listen(port, () => console.log(`Studio Back End listening on port ${port}!`));
+
+
+// Helpers:
 
 const generateUniqueDbName = (arr1, arr2, arr3, callback) => {
   let dbNumber = randomDbNumber();
