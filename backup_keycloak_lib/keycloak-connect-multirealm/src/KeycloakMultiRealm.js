@@ -1,16 +1,16 @@
-const Keycloak = require('keycloak-connect');
+const Keycloak = require('../../keycloak-connect');
 const NodeCache = require('node-cache');
 const composable = require('composable-middleware');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 
-const Admin = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/admin'));
-const Logout = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/logout'));
-const PostAuth = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/post-auth'));
-const GrantAttacher = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/grant-attacher'));
-const Protect = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/protect'));
-const Enforcer = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/enforcer'));
+const Admin = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/admin'));
+const Logout = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/logout'));
+const PostAuth = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/post-auth'));
+const GrantAttacher = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/grant-attacher'));
+const Protect = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/protect'));
+const Enforcer = require(path.join(process.cwd(), './backup_keycloak_lib/keycloak-connect/middleware/enforcer'));
 
 const cache = new NodeCache();
 

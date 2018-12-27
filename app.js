@@ -6,7 +6,7 @@ const qs = require('qs');
 
 // keycloak
 const adminClient = require('keycloak-admin-client');
-const KeycloakMultirealm = require('keycloak-connect-multirealm');
+const KeycloakMultirealm = require('./backup_keycloak_lib/keycloak-connect-multirealm');
 const session = require('express-session');
 
 
